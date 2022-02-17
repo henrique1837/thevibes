@@ -10,9 +10,6 @@ import useIPFS from './hooks/useIPFS';
 
 let metadata;
 let contractAddress;
-let metadatas = [];
-let players = [];
-let loaded = [];
 let coinbaseGame;
 let cursors;
 let room;
@@ -120,7 +117,7 @@ const MainScene = {
     //  Add a player ship and camera follow
     this.player = this.physics.add.sprite(Phaser.Math.Between(0, 1600), Phaser.Math.Between(0, 1600), 'ship');
     this.player.setBounce(0).setCollideWorldBounds(true);
-    this.player.displayWidth = 32;
+    this.player.displayWidth = 64;
     //scale evenly
     this.player.scaleY = this.player.scaleX;
     this.player.name = metadata.name;
@@ -130,6 +127,14 @@ const MainScene = {
     this.physics.add.collider(this.player,worldLayer);
     this.physics.add.collider(this.player,layer2);
     this.physics.add.collider(this.player,waterLayer);
+    this.physics.add.collider(this.player,this.otherPlayers);
+    this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
+      player.setVelocityX(0);
+      player.setVelocityY(0);
+
+      friend.setVelocityX(0);
+      friend.setVelocityY(0);
+    });
 
     this.physics.add.collider(this.otherPlayers,worldLayer);
     this.physics.add.collider(this.otherPlayers,layer2);
@@ -149,20 +154,27 @@ const MainScene = {
           let added = false;
           this.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
+              otherPlayer.setVelocityX(0);
+              otherPlayer.setVelocityY(0);
               otherPlayer.setPosition(obj.player.x, obj.player.y);
               added = true;
             }
           });
           this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
             if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
+              otherPlayer.setVelocityX(0);
+              otherPlayer.setVelocityY(0);
               otherPlayer.setPosition(obj.player.x, obj.player.y);
               added = true;
             }
           });
           if(!added && obj.metadata.name !== metadata.name){
             const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
-            .setInteractive();
-            otherPlayer.displayWidth = 32;
+              .setInteractive();
+            otherPlayer.setBounce(0);
+            otherPlayer.setVelocityX(0);
+            otherPlayer.setVelocityY(0);
+            otherPlayer.scaleX = this.player.scaleX;
             otherPlayer.scaleY = otherPlayer.scaleX;
 
             otherPlayer.setCollideWorldBounds(true);
@@ -207,13 +219,13 @@ const MainScene = {
 
     this.physics.add.collider(this.player, this.friendlyPlayers);
 
-    this.physics.add.collider(this.player,this.otherPlayers,async (player, enemy) => {
+    this.physics.add.collision(this.player,this.otherPlayers,async (player, enemy) => {
       if(enemy.body.touching.up){
         const msg = JSON.stringify({
           name: enemy.name,
           type: "collision"
         });
-        enemy.destroy();
+        enemy.kill();
         const msgSend = new TextEncoder().encode(msg)
         await room.pubsub.publish(topicMovements, msgSend)
       } else if(player.body.touching.up) {
@@ -228,7 +240,7 @@ const MainScene = {
         player.setVelocityY(0);
 
         enemy.setVelocityX(0);
-        enemy.setVelocityX(0);
+        enemy.setVelocityY(0);
       }
     },null, this);
 
@@ -457,7 +469,7 @@ export default function App () {
 
     }
 
-  },[ipfs,msgs]);
+  },[ipfs,msgs,subscribed]);
 
   useMemo(()=>{
     const inputMessage = document.getElementById('input_message');
@@ -626,19 +638,22 @@ export default function App () {
           </Row>
           </Container>
         }
-        <Container>
+        <Container style={{paddingTop: '100px'}}>
           <Row>
-            <Col md={3}>
+            <Col md={2}>
               <p><small><a href="https://phaser.io/" target="_blank">Done with phaser</a></small></p>
             </Col>
-            <Col md={3}>
-              <p><small><a href="https://thehashavatars.com" target="_blank" >From The HashAvatars</a></small></p>
+            <Col md={2}>
+              <p><small><a href="https://thehashavatars.com" target="_blank" >Modified from The HashAvatars</a></small></p>
             </Col>
-            <Col md={3}>
+            <Col md={2}>
               <p><small><a href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank">Subgraphs by Leon Du</a></small></p>
             </Col>
-            <Col md={3}>
-              <p><small>Github</small></p>
+            <Col md={2}>
+              <p><small><a href="https://github.com/henrique1837/thevibes" target="_blank">Github</a></small></p>
+            </Col>
+            <Col md={2}>
+              <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank">Tileset by Szadiart</a></small></p>
             </Col>
           </Row>
         </Container>

@@ -79,7 +79,7 @@ const MainScene = {
     this.load.image('ship', metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
     this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
 
-    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafkreicmd6kczq36zz6sjdesnm7npxes5bargwkvd52t3562u4uuuyz2cy");
+    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafybeibwkbxicco333jffuky2f2yhkpmmwujoyq2zni6pbnefeze45d7ym");
 
 
   },
@@ -115,7 +115,7 @@ const MainScene = {
     this.cameras.main.setZoom(2);
 
     //  Add a player ship and camera follow
-    this.player = this.physics.add.sprite(Phaser.Math.Between(0, 1600), Phaser.Math.Between(0, 1600), 'ship');
+    this.player = this.physics.add.sprite(Phaser.Math.Between(500, 4500), Phaser.Math.Between(500, 4500), 'ship');
     this.player.setBounce(0).setCollideWorldBounds(true);
     this.player.displayWidth = 64;
     //scale evenly
@@ -225,7 +225,7 @@ const MainScene = {
           name: enemy.name,
           type: "collision"
         });
-        enemy.kill();
+        enemy.destroy();
         const msgSend = new TextEncoder().encode(msg)
         await room.pubsub.publish(topicMovements, msgSend)
       } else if(player.body.touching.up) {

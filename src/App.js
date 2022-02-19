@@ -16,12 +16,16 @@ let room;
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 
-const MainScene = {
+class MainScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'MainScene' })
+  }
 
-  init: function(){
+  init(){
     this.cameras.main.setBackgroundColor('#24252A')
-  },
-  preload: function(){
+  }
+
+  preload = () => {
     let progressBar = this.add.graphics();
     let progressBox = this.add.graphics();
     progressBox.fillStyle(0x222222, 0.8);
@@ -79,16 +83,16 @@ const MainScene = {
     this.load.image('ship', metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
     this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
 
-    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafybeibwkbxicco333jffuky2f2yhkpmmwujoyq2zni6pbnefeze45d7ym");
+    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie");
 
 
-  },
+  }
 
-  create: async function(){
+  create = async () => {
     const map = this.make.tilemap({key: 'map'});
     //this.add.image(1000,1020,'background')
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
-    // Phaser's cache (i.e. the name you used in preload)
+    // Pody.stop();ody.stop();haser's cache (i.e. the name you used in preload)
     const tileset = map.addTilesetImage("!CL_DEMO_32x32", "tiles");
     // Parameters: layer name (or index) from Tiled, tileset, x, y
     const bellowLayer = map.createLayer("Ground", tileset, 0, 0);
@@ -127,14 +131,7 @@ const MainScene = {
     this.physics.add.collider(this.player,worldLayer);
     this.physics.add.collider(this.player,layer2);
     this.physics.add.collider(this.player,waterLayer);
-    this.physics.add.collider(this.player,this.otherPlayers);
-    this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
-      player.setVelocityX(0);
-      player.setVelocityY(0);
 
-      friend.setVelocityX(0);
-      friend.setVelocityY(0);
-    });
 
     this.physics.add.collider(this.otherPlayers,worldLayer);
     this.physics.add.collider(this.otherPlayers,layer2);
@@ -143,137 +140,31 @@ const MainScene = {
     this.physics.add.collider(this.friendlyPlayers, worldLayer);
     this.physics.add.collider(this.friendlyPlayers, layer2);
     this.physics.add.collider(this.friendlyPlayers, waterLayer);
-    let loader = new Phaser.Loader.LoaderPlugin(this);
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    room.pubsub.subscribe(topicMovements,async (msg) => {
-      try{
-        const obj = JSON.parse(new TextDecoder().decode(msg.data));
-        if(obj.type === "movement"){
-          let added = false;
-          this.otherPlayers.getChildren().forEach(function (otherPlayer) {
-            if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
-              otherPlayer.setVelocityX(0);
-              otherPlayer.setVelocityY(0);
-              otherPlayer.setPosition(obj.player.x, obj.player.y);
-              added = true;
-            }
-          });
-          this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
-            if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
-              otherPlayer.setVelocityX(0);
-              otherPlayer.setVelocityY(0);
-              otherPlayer.setPosition(obj.player.x, obj.player.y);
-              added = true;
-            }
-          });
-          if(!added && obj.metadata.name !== metadata.name){
-            const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
-              .setInteractive();
-            otherPlayer.setBounce(0);
-            otherPlayer.setVelocityX(0);
-            otherPlayer.setVelocityY(0);
-            otherPlayer.scaleX = this.player.scaleX;
-            otherPlayer.scaleY = otherPlayer.scaleX;
-
-            otherPlayer.setCollideWorldBounds(true);
-            otherPlayer.name =  obj.metadata.name
-            otherPlayer.contractAddress = obj.contractAddress;
-            loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
-            loader.once(Phaser.Loader.Events.COMPLETE, () => {
-              // texture loaded so use instead of the placeholder
-              otherPlayer.setTexture(obj.metadata.name)
-            })
-            loader.start();
-            otherPlayer.on('pointerdown', function (pointer) {
-              window.open(obj.metadata.external_url,"_blank");
-            });
-            if(obj.contractAddress !== contractAddress){
-              this.otherPlayers.add(otherPlayer);
-            } else {
-              this.friendlyPlayers.add(otherPlayer);
-            }
-          }
-        }
-        if(obj.type === "collision"){
-          if(obj.name === metadata.name){
-            this.player.setPosition(Phaser.Math.Between(0, 1600),Phaser.Math.Between(0, 1600));
-            const str = JSON.stringify({
-              message: `${metadata.name} died!`,
-              from: coinbaseGame,
-              timestamp: (new Date()).getTime(),
-              metadata: metadata,
-              type: "message"
-            });
-            const msgSend = new TextEncoder().encode(str)
-            await room.pubsub.publish(topic, msgSend)
-          }
-        }
-      } catch(err){
-        console.log(err)
-      }
-    });
+    room.pubsub.subscribe(topicMovements,this.handleMessages);
 
 
 
-    this.physics.add.collider(this.player, this.friendlyPlayers);
+    this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
+      player.setVelocity(0,0);
+      player.setAcceleration(0,0);
+      player.stop();
+      friend.setVelocity(0,0);
+      friend.setAcceleration(0,0);
+      friend.stop();
+    },null,this);
+    this.physics.add.collider(this.player,this.otherPlayers,this.handleCollision,null, this);
 
-    this.physics.add.collision(this.player,this.otherPlayers,async (player, enemy) => {
-      if(enemy.body.touching.up){
-        const msg = JSON.stringify({
-          name: enemy.name,
-          type: "collision"
-        });
-        enemy.destroy();
-        const msgSend = new TextEncoder().encode(msg)
-        await room.pubsub.publish(topicMovements, msgSend)
-      } else if(player.body.touching.up) {
-        const msg = JSON.stringify({
-          name: player.name,
-          type: "collision"
-        });
-        const msgSend = new TextEncoder().encode(msg)
-        await room.pubsub.publish(topicMovements, msgSend)
-      } else {
-        player.setVelocityX(0);
-        player.setVelocityY(0);
 
-        enemy.setVelocityX(0);
-        enemy.setVelocityY(0);
-      }
-    },null, this);
+    this.sendMessagePlayerEntered();
 
 
 
+  }
 
-
-    let msg = JSON.stringify({
-      message: `${metadata.name} joined HashVillage!`,
-      from: coinbaseGame,
-      timestamp: (new Date()).getTime(),
-      metadata: metadata,
-      type: "message"
-    });
-
-    let msgSend = new TextEncoder().encode(msg)
-    await room.pubsub.publish(topic, msgSend)
-
-
-    msg = JSON.stringify({
-      metadata: metadata,
-      contractAddress: contractAddress,
-      player: this.player,
-      from: coinbaseGame,
-      type: "movement"
-    });
-
-
-    msgSend = new TextEncoder().encode(msg)
-    await room.pubsub.publish(topicMovements, msgSend)
-  },
-
-  update: async function(){
+  update = async () => {
 
     //this.player.setVelocity(0);
 
@@ -301,11 +192,133 @@ const MainScene = {
     }
 
   }
+
+  handleMessages = async (msg) => {
+    try{
+      const obj = JSON.parse(new TextDecoder().decode(msg.data));
+      if(obj.type === "movement"){
+        let added = false;
+        this.otherPlayers.getChildren().forEach(function (otherPlayer) {
+          if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
+            otherPlayer.setVelocityX(0);
+            otherPlayer.setVelocityY(0);
+            otherPlayer.setPosition(obj.player.x, obj.player.y);
+            added = true;
+          }
+        });
+        this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
+          if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
+            otherPlayer.setVelocityX(0);
+            otherPlayer.setVelocityY(0);
+            otherPlayer.setPosition(obj.player.x, obj.player.y);
+            added = true;
+          }
+        });
+        if(!added && obj.metadata.name !== metadata.name){
+          const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
+            .setInteractive();
+          otherPlayer.setBounce(0);
+          otherPlayer.setVelocityX(0);
+          otherPlayer.setVelocityY(0);
+          otherPlayer.scaleX = this.player.scaleX;
+          otherPlayer.scaleY = otherPlayer.scaleX;
+
+          otherPlayer.setCollideWorldBounds(true);
+          otherPlayer.name =  obj.metadata.name
+          otherPlayer.contractAddress = obj.contractAddress;
+          const loader = new Phaser.Loader.LoaderPlugin(this);
+
+          loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+          loader.once(Phaser.Loader.Events.COMPLETE, () => {
+            // texture loaded so use instead of the placeholder
+            otherPlayer.setTexture(obj.metadata.name)
+          })
+          loader.start();
+          otherPlayer.on('pointerdown', function (pointer) {
+            window.open(obj.metadata.external_url,"_blank");
+          });
+          if(obj.contractAddress !== contractAddress){
+            this.otherPlayers.add(otherPlayer);
+          } else {
+            this.friendlyPlayers.add(otherPlayer);
+          }
+        }
+      }
+      if(obj.type === "collision"){
+        if(obj.name === metadata.name){
+          this.player.setPosition(Phaser.Math.Between(500, 4600),Phaser.Math.Between(500, 4600));
+          const str = JSON.stringify({
+            message: `${metadata.name} died!`,
+            from: coinbaseGame,
+            timestamp: (new Date()).getTime(),
+            metadata: metadata,
+            type: "message"
+          });
+          const msgSend = new TextEncoder().encode(str)
+          await room.pubsub.publish(topic, msgSend)
+        }
+      }
+    } catch(err){
+      console.log(err)
+    }
+  }
+
+  handleCollision = async (player, otherPlayer) => {
+    if(otherPlayer.body.touching.up){
+      const msg = JSON.stringify({
+        name: otherPlayer.name,
+        type: "collision"
+      });
+      otherPlayer.destroy();
+      const msgSend = new TextEncoder().encode(msg)
+      await room.pubsub.publish(topicMovements, msgSend)
+    } else if(player.body.touching.up) {
+      const msg = JSON.stringify({
+        name: player.name,
+        type: "collision"
+      });
+      const msgSend = new TextEncoder().encode(msg)
+      await room.pubsub.publish(topicMovements, msgSend)
+    }
+    player.setVelocity(0,0);
+    player.setAcceleration(0,0);
+    player.stop();
+    otherPlayer.setVelocity(0,0);
+    otherPlayer.setAcceleration(0,0);
+    otherPlayer.stop();
+  }
+
+  sendMessagePlayerEntered = async () => {
+    let msg = JSON.stringify({
+      message: `${metadata.name} joined HashVillage!`,
+      from: coinbaseGame,
+      timestamp: (new Date()).getTime(),
+      metadata: metadata,
+      type: "message"
+    });
+
+    let msgSend = new TextEncoder().encode(msg)
+    await room.pubsub.publish(topic, msgSend)
+
+
+    msg = JSON.stringify({
+      metadata: metadata,
+      contractAddress: contractAddress,
+      player: this.player,
+      from: coinbaseGame,
+      type: "movement"
+    });
+
+
+    msgSend = new TextEncoder().encode(msg)
+    await room.pubsub.publish(topicMovements, msgSend)
+  }
 }
 
+
 const game = {
-  width: "80%",
-  height: "60%",
+  width: "100%",
+  height: "80%",
   type: Phaser.AUTO,
   render: {
     antialias: false,
@@ -471,15 +484,18 @@ export default function App () {
 
   },[ipfs,msgs,subscribed]);
 
-  useMemo(()=>{
+  useEffect(()=>{
     const inputMessage = document.getElementById('input_message');
+
     window.addEventListener('keydown', async event => {
-      /*
+
       if (event.which === 13) {
-        setMsg(inputMessage.value);
-        await post();
+        if (document.activeElement === inputMessage) {
+          setMsg(inputMessage.value);
+          await post();
+        }
       }
-      */
+
       if (event.which === 32) {
         if (document.activeElement === inputMessage) {
           inputMessage.value = inputMessage.value + ' ';
@@ -492,18 +508,17 @@ export default function App () {
     <center className="App">
       {
         initialize ?
+        <>
+        {
+          ipfs && <IonPhaser ref={gameRef} game={game} initialize={initialize} />
+        }
         <Container>
           <Row>
-            <Col md={12} style={{paddingTop:"50px"}}>
-              {
-                ipfs && <IonPhaser ref={gameRef} game={game} initialize={initialize} />
-              }
-            </Col>
             <Col md={12}>
             {
               ipfs ?
               <>
-              <p>Total of {peers?.length} players</p>
+              <p>Total of {peers ? peers.length + 1 : 0} players</p>
               <input  placeholder="Message" id='input_message' onChange={(e) => {setMsg(e.target.value);}} />
               <button onClick={() => {post()}}>Send Message</button>
               <Container>
@@ -529,9 +544,9 @@ export default function App () {
               <p>Loading ipfs pubsub ...</p>
             }
             </Col>
-
           </Row>
-        </Container> :
+        </Container>
+        </> :
         <>
         <h1>Play for Fun</h1>
         <p>No matter how valuable is your NFT or where it is deployed, here we all have same value!</p>

@@ -7,333 +7,10 @@ import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
-
-let metadata;
-let contractAddress;
-let coinbaseGame;
-let cursors;
-let room;
+import Game from './Game';
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 
-class MainScene extends Phaser.Scene {
-  constructor() {
-    super({ key: 'MainScene' })
-  }
-
-  init(){
-    this.cameras.main.setBackgroundColor('#24252A')
-  }
-
-  preload = () => {
-    let progressBar = this.add.graphics();
-    let progressBox = this.add.graphics();
-    progressBox.fillStyle(0x222222, 0.8);
-    progressBox.fillRect(240, 270, 320, 50);
-
-    let width = this.cameras.main.width;
-    let height = this.cameras.main.height;
-    let loadingText = this.make.text({
-        x: width / 2,
-        y: height / 2 - 50,
-        text: 'Loading...',
-        style: {
-            font: '20px monospace',
-            fill: '#ffffff'
-        }
-    });
-    loadingText.setOrigin(0.5, 0.5);
-
-    let percentText = this.make.text({
-        x: width / 2,
-        y: height / 2 - 5,
-        text: '0%',
-        style: {
-            font: '18px monospace',
-            fill: '#ffffff'
-        }
-    });
-    percentText.setOrigin(0.5, 0.5);
-
-    let assetText = this.make.text({
-        x: width / 2,
-        y: height / 2 + 50,
-        text: '',
-        style: {
-            font: '18px monospace',
-            fill: '#ffffff'
-        }
-    });
-    assetText.setOrigin(0.5, 0.5);
-    this.load.on('progress', function (value) {
-      percentText.setText(parseInt(value * 100) + '%');
-      progressBar.clear();
-      progressBar.fillStyle(0xffffff, 1);
-      progressBar.fillRect(250, 280, 300 * value, 30);
-    });
-
-    this.load.on('complete', function () {
-      progressBar.destroy();
-      progressBox.destroy();
-      loadingText.destroy();
-      percentText.destroy();
-      assetText.destroy();
-    });
-
-    this.load.image('ship', metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
-    this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
-
-    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie");
-
-
-  }
-
-  create = async () => {
-    const map = this.make.tilemap({key: 'map'});
-    //this.add.image(1000,1020,'background')
-    // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
-    // Pody.stop();ody.stop();haser's cache (i.e. the name you used in preload)
-    const tileset = map.addTilesetImage("!CL_DEMO_32x32", "tiles");
-    // Parameters: layer name (or index) from Tiled, tileset, x, y
-    const bellowLayer = map.createLayer("Ground", tileset, 0, 0);
-    const worldLayer = map.createLayer("Layer1", tileset, 0, 0);
-    const waterLayer = map.createLayer("Water", tileset, 0, 0);
-    const layer2 = map.createLayer("Layer2", tileset, 0, 0);
-
-    worldLayer.setCollisionByProperty({ collides: true });
-    waterLayer.setCollisionByProperty({ collides: true });
-    layer2.setCollisionByProperty({ collides: true });
-    worldLayer.setCollisionByExclusion([-1]);
-    waterLayer.setCollisionByExclusion([-1]);
-    layer2.setCollisionByExclusion([-1]);
-
-    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    this.room = room;
-    this.otherPlayers = this.physics.add.group();
-    this.friendlyPlayers = this.physics.add.group();
-
-
-    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    //this.createLandscape();
-    this.cameras.main.setZoom(2);
-
-    //  Add a player ship and camera follow
-    this.player = this.physics.add.sprite(Phaser.Math.Between(500, 4500), Phaser.Math.Between(500, 4500), 'ship');
-    this.player.setBounce(0).setCollideWorldBounds(true);
-    this.player.displayWidth = 64;
-    //scale evenly
-    this.player.scaleY = this.player.scaleX;
-    this.player.name = metadata.name;
-    this.cameras.main.startFollow(this.player, false, 0.2, 0.2);
-    this.cameras.main.setZoom(1);
-
-    this.physics.add.collider(this.player,worldLayer);
-    this.physics.add.collider(this.player,layer2);
-    this.physics.add.collider(this.player,waterLayer);
-
-
-    this.physics.add.collider(this.otherPlayers,worldLayer);
-    this.physics.add.collider(this.otherPlayers,layer2);
-    this.physics.add.collider(this.otherPlayers,waterLayer);
-
-    this.physics.add.collider(this.friendlyPlayers, worldLayer);
-    this.physics.add.collider(this.friendlyPlayers, layer2);
-    this.physics.add.collider(this.friendlyPlayers, waterLayer);
-
-    cursors = this.input.keyboard.createCursorKeys();
-
-    room.pubsub.subscribe(topicMovements,this.handleMessages);
-
-
-
-    this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
-      player.setVelocity(0,0);
-      player.setAcceleration(0,0);
-      player.stop();
-      friend.setVelocity(0,0);
-      friend.setAcceleration(0,0);
-      friend.stop();
-    },null,this);
-    this.physics.add.collider(this.player,this.otherPlayers,this.handleCollision,null, this);
-
-
-    this.sendMessagePlayerEntered();
-
-
-
-  }
-
-  update = async () => {
-
-    //this.player.setVelocity(0);
-
-    const msg = JSON.stringify({
-      contractAddress: contractAddress,
-      metadata: metadata,
-      player: this.player,
-      from: coinbaseGame,
-      type: "movement"
-    });
-    if(cursors.left.isDown || cursors.right.isDown || cursors.up.isDown || cursors.down.isDown){
-      const msgSend = new TextEncoder().encode(msg)
-      await room.pubsub.publish(topicMovements, msgSend)
-    }
-    if (cursors.left.isDown){
-      this.player.setVelocityX(-150);
-    } else if (cursors.right.isDown){
-      this.player.setVelocityX(150);
-    } else if (cursors.up.isDown){
-      this.player.setVelocityY(-150);
-    } else if (cursors.down.isDown){
-      this.player.setVelocityY(150);
-    } else {
-      this.player.setVelocity(0);
-    }
-
-  }
-
-  handleMessages = async (msg) => {
-    try{
-      const obj = JSON.parse(new TextDecoder().decode(msg.data));
-      if(obj.type === "movement"){
-        let added = false;
-        this.otherPlayers.getChildren().forEach(function (otherPlayer) {
-          if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
-            otherPlayer.setVelocityX(0);
-            otherPlayer.setVelocityY(0);
-            otherPlayer.setPosition(obj.player.x, obj.player.y);
-            added = true;
-          }
-        });
-        this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
-          if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
-            otherPlayer.setVelocityX(0);
-            otherPlayer.setVelocityY(0);
-            otherPlayer.setPosition(obj.player.x, obj.player.y);
-            added = true;
-          }
-        });
-        if(!added && obj.metadata.name !== metadata.name){
-          const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
-            .setInteractive();
-          otherPlayer.setBounce(0);
-          otherPlayer.setVelocityX(0);
-          otherPlayer.setVelocityY(0);
-          otherPlayer.scaleX = this.player.scaleX;
-          otherPlayer.scaleY = otherPlayer.scaleX;
-
-          otherPlayer.setCollideWorldBounds(true);
-          otherPlayer.name =  obj.metadata.name
-          otherPlayer.contractAddress = obj.contractAddress;
-          const loader = new Phaser.Loader.LoaderPlugin(this);
-
-          loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
-          loader.once(Phaser.Loader.Events.COMPLETE, () => {
-            // texture loaded so use instead of the placeholder
-            otherPlayer.setTexture(obj.metadata.name)
-          })
-          loader.start();
-          otherPlayer.on('pointerdown', function (pointer) {
-            window.open(obj.metadata.external_url,"_blank");
-          });
-          if(obj.contractAddress !== contractAddress){
-            this.otherPlayers.add(otherPlayer);
-          } else {
-            this.friendlyPlayers.add(otherPlayer);
-          }
-        }
-      }
-      if(obj.type === "collision"){
-        if(obj.name === metadata.name){
-          this.player.setPosition(Phaser.Math.Between(500, 4600),Phaser.Math.Between(500, 4600));
-          const str = JSON.stringify({
-            message: `${metadata.name} died!`,
-            from: coinbaseGame,
-            timestamp: (new Date()).getTime(),
-            metadata: metadata,
-            type: "message"
-          });
-          const msgSend = new TextEncoder().encode(str)
-          await room.pubsub.publish(topic, msgSend)
-        }
-      }
-    } catch(err){
-      console.log(err)
-    }
-  }
-
-  handleCollision = async (player, otherPlayer) => {
-    if(otherPlayer.body.touching.up){
-      const msg = JSON.stringify({
-        name: otherPlayer.name,
-        type: "collision"
-      });
-      otherPlayer.destroy();
-      const msgSend = new TextEncoder().encode(msg)
-      await room.pubsub.publish(topicMovements, msgSend)
-    } else if(player.body.touching.up) {
-      const msg = JSON.stringify({
-        name: player.name,
-        type: "collision"
-      });
-      const msgSend = new TextEncoder().encode(msg)
-      await room.pubsub.publish(topicMovements, msgSend)
-    }
-    player.setVelocity(0,0);
-    player.setAcceleration(0,0);
-    player.stop();
-    otherPlayer.setVelocity(0,0);
-    otherPlayer.setAcceleration(0,0);
-    otherPlayer.stop();
-  }
-
-  sendMessagePlayerEntered = async () => {
-    let msg = JSON.stringify({
-      message: `${metadata.name} joined HashVillage!`,
-      from: coinbaseGame,
-      timestamp: (new Date()).getTime(),
-      metadata: metadata,
-      type: "message"
-    });
-
-    let msgSend = new TextEncoder().encode(msg)
-    await room.pubsub.publish(topic, msgSend)
-
-
-    msg = JSON.stringify({
-      metadata: metadata,
-      contractAddress: contractAddress,
-      player: this.player,
-      from: coinbaseGame,
-      type: "movement"
-    });
-
-
-    msgSend = new TextEncoder().encode(msg)
-    await room.pubsub.publish(topicMovements, msgSend)
-  }
-}
-
-
-const game = {
-  width: "100%",
-  height: "80%",
-  type: Phaser.AUTO,
-  render: {
-    antialias: false,
-    pixelArt: true,
-    roundPixels: true
-  },
-  physics: {
-    default: 'arcade',
-    arcade: {
-      gravity: { y: 0,x:0 },
-      debug: false
-    }
-  },
-  scene: MainScene
-};
 
 export default function App () {
   const [relayTime, setRelayTime] = useState(null);
@@ -400,12 +77,17 @@ export default function App () {
   };
 
   const setMetadata = (obj) => {
-      metadata = obj.metadata;
-      coinbaseGame = coinbase;
-      if(!coinbaseGame){
-        coinbaseGame = obj.metadata.name
+      console.log(Game)
+      const scene = Game.scene;
+      scene.metadata = obj.metadata;
+      //metadata = obj.metadata;
+      scene.coinbaseGame = coinbase;
+      //coinbaseGame = coinbase;
+      if(!scene.coinbaseGame){
+        scene.coinbaseGame = obj.metadata.name
       }
-      contractAddress = obj.address;
+      scene.contractAddress = obj.address;
+      scene.room = ipfs;
       setMetadataPlayer(obj.metadata);
       setInitialize(true);
   }
@@ -493,7 +175,6 @@ export default function App () {
         setConnectedUsers(newPeerIds.length);
       },5000);
 
-      room = ipfs;
       setSubscribed(true);
 
     }
@@ -501,22 +182,23 @@ export default function App () {
   },[ipfs,msgs,subscribed]);
 
   useEffect(()=>{
+    if(initialize){
+      window.addEventListener('keydown', async event => {
+        const inputMessage = document.getElementById('input_message');
 
-    window.addEventListener('keydown', async event => {
-      const inputMessage = document.getElementById('input_message');
-
-      if (event.which === 13) {
-        await post(inputMessage.value);
-      }
-
-      if (event.which === 32) {
-        if (document.activeElement === inputMessage) {
-          inputMessage.value = inputMessage.value + ' ';
-          setMsg(inputMessage.value)
+        if (event.which === 13) {
+          await post(inputMessage.value);
         }
-      }
-    });
-  },[document.getElementById('input_message')])
+
+        if (event.which === 32) {
+          if (document.activeElement === inputMessage) {
+            inputMessage.value = inputMessage.value + ' ';
+            setMsg(inputMessage.value)
+          }
+        }
+      });
+    }
+  },[document.getElementById('input_message')],initialize)
 
   return (
     <center className="App">
@@ -524,7 +206,7 @@ export default function App () {
         initialize ?
         <>
         {
-          ipfs && <IonPhaser ref={gameRef} game={game} initialize={initialize} />
+          ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} />
         }
         <Container>
           <Row>
@@ -556,8 +238,8 @@ export default function App () {
               </Container>
               </> :
               <>
-              <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-              <p>Loading ipfs pubsub ...</p>
+                <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
+                <p>Loading ipfs pubsub ...</p>
               </>
             }
             </Col>
@@ -572,6 +254,11 @@ export default function App () {
         <p>Feel free to fork and modify it!</p>
         <p><small>This game is offchain and does not sends transactions to blockchain, it uses IPFS pubsub room to allow multiplayer</small></p>
         {
+          !ipfs ?
+          <>
+            <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
+            <p>Loading ipfs pubsub ...</p>
+          </> :
           !coinbase ?
           <Row>
           <Col lg={6}>
@@ -708,7 +395,13 @@ export default function App () {
             <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</a></small></p>
           </Col>
           <Col md={2}>
-            <small><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAB/klEQVRYhe3XsU5UQRQG4E9M0MRGo6zaGGuBSAVqfA59C15DLEGWUt9EGxLtATFiI3HpsFEUC1yLe2523B12L7ujhfFPJnd25sx//jNn7rmz/EcP03iKA3SwEmN/jXcF3b62UkBAY95OTD7Aw+h3CggYyjuVWTCFc9G/WEBAzZHyZpHbqo9oTeC8FRz9vE9yxtMhooND7Ifx1pgiWrG2G1yHzni4U4JUxDzaeIdvOMIu1jE3Yu1EUWxhAz8NbmndTsKmiPOciC6OsYolXIq2hLWYq+2KOK+xEaSfcHeI3ULYdFVpKoJ51dYeJ86HVbeFsD3BbAkBbVVEq8nYqOr2LMbWSgjYDbLFZGxU1bwXY9ujyHOVsB+34vk2GbuQrK+rW/pu78TzdgP+kThSRXM5fp/HK4MpeBlzcCXGvpQQUKfgPm7iTcZ53V7jhio1jVLQBOtB9hyb0X+PR7iKa3iMvZjbxAuDB3dszKleqTrKPcxk7GbwIbE7wZ0SAugVoi6Wh9gtJ3bFCtF11anuL8WLBkvxj8RuJ9ZO7Hxb70C1/Z6O3Meo3bdmbBGtU4hmVdHu4Gu0bdWu1DnvF97oo5TW9/RCMm4UqYhGF5Jcfd9vqv4UtPQCGetWfDiB8xqfM7yNb8XHBQR8z/BmkUtB9vZ6RjTmTW/Fpf+a/QnefwS/ANmI8WcTkJHBAAAAAElFTkSuQmCC" alt="#" title="Users Connected to the Dapp" /> {connections + 1}</small>
+          {
+            ipfs ?
+            <small><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAB/klEQVRYhe3XsU5UQRQG4E9M0MRGo6zaGGuBSAVqfA59C15DLEGWUt9EGxLtATFiI3HpsFEUC1yLe2523B12L7ujhfFPJnd25sx//jNn7rmz/EcP03iKA3SwEmN/jXcF3b62UkBAY95OTD7Aw+h3CggYyjuVWTCFc9G/WEBAzZHyZpHbqo9oTeC8FRz9vE9yxtMhooND7Ifx1pgiWrG2G1yHzni4U4JUxDzaeIdvOMIu1jE3Yu1EUWxhAz8NbmndTsKmiPOciC6OsYolXIq2hLWYq+2KOK+xEaSfcHeI3ULYdFVpKoJ51dYeJ86HVbeFsD3BbAkBbVVEq8nYqOr2LMbWSgjYDbLFZGxU1bwXY9ujyHOVsB+34vk2GbuQrK+rW/pu78TzdgP+kThSRXM5fp/HK4MpeBlzcCXGvpQQUKfgPm7iTcZ53V7jhio1jVLQBOtB9hyb0X+PR7iKa3iMvZjbxAuDB3dszKleqTrKPcxk7GbwIbE7wZ0SAugVoi6Wh9gtJ3bFCtF11anuL8WLBkvxj8RuJ9ZO7Hxb70C1/Z6O3Meo3bdmbBGtU4hmVdHu4Gu0bdWu1DnvF97oo5TW9/RCMm4UqYhGF5Jcfd9vqv4UtPQCGetWfDiB8xqfM7yNb8XHBQR8z/BmkUtB9vZ6RjTmTW/Fpf+a/QnefwS/ANmI8WcTkJHBAAAAAElFTkSuQmCC" alt="#" title="Users Connected to the Dapp" /> {connections + 1}</small> :
+            <small><Spinner animation="border" size="sm" /> Loading ipfs pubsub ...</small>
+
+          }
+
           </Col>
         </Row>
       </Container>

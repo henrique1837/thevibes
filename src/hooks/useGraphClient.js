@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // Enter a valid infura key here to avoid being rate limited
 // You can get a key for free at https://infura.io/register
@@ -55,7 +55,7 @@ function useGraphClient() {
      setClient(newClient);
    //}
  }
- const getNftsFrom = async (address) => {
+  const getNftsFrom = async (address) => {
    const tokensQuery = `
       query {
         accounts(where: {id: "${address.toLowerCase()}"}) {

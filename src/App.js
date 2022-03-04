@@ -1,7 +1,7 @@
 import React, { useState,useCallback, useEffect,useMemo, useRef } from 'react'
 import Phaser from 'phaser'
 import { IonPhaser } from '@ion-phaser/react'
-import { Container,Row,Col,Image } from 'react-bootstrap';
+import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
 
 
 import useWeb3Modal from './hooks/useWeb3Modal';
@@ -336,6 +336,8 @@ const game = {
 };
 
 export default function App () {
+  const [relayTime, setRelayTime] = useState(null);
+
   const gameRef = useRef(null);
   const {
     provider,
@@ -366,6 +368,8 @@ export default function App () {
   const [msg,setMsg] = useState();
   const [subscribed,setSubscribed] = useState();
   const [peers,setPeersIds] = useState(0);
+  const [connections,setConnectedUsers] = useState(0);
+
   const destroy = () => {
     if (gameRef.current) {
       gameRef.current.destroy()
@@ -373,8 +377,12 @@ export default function App () {
     setInitialize(false)
   }
 
-  const post =  useCallback(async () => {
+  const post =  async (msgEnter) => {
       const inputMessage = document.getElementById('input_message');
+      let message = msg;
+      if(!msg || msgEnter){
+        message = msgEnter
+      }
       const msgString = JSON.stringify({
         message: msg,
         from: coinbase,
@@ -389,11 +397,14 @@ export default function App () {
       inputMessage.innerText = '';
       setMsg('');
 
-  },[ipfs,coinbase,metadataPlayer,document.getElementById('input_message'),msg]);
+  };
 
   const setMetadata = (obj) => {
       metadata = obj.metadata;
       coinbaseGame = coinbase;
+      if(!coinbaseGame){
+        coinbaseGame = obj.metadata.name
+      }
       contractAddress = obj.address;
       setMetadataPlayer(obj.metadata);
       setInitialize(true);
@@ -475,7 +486,12 @@ export default function App () {
       setInterval(async () => {
         const newPeerIds = await ipfs.pubsub.peers(topicMovements);
         setPeersIds(newPeerIds);
-      },5000)
+      },5000);
+
+      setInterval(async () => {
+        const newPeerIds = await ipfs.pubsub.peers(topic);
+        setConnectedUsers(newPeerIds.length);
+      },5000);
 
       room = ipfs;
       setSubscribed(true);
@@ -485,15 +501,12 @@ export default function App () {
   },[ipfs,msgs,subscribed]);
 
   useEffect(()=>{
-    const inputMessage = document.getElementById('input_message');
 
     window.addEventListener('keydown', async event => {
+      const inputMessage = document.getElementById('input_message');
 
       if (event.which === 13) {
-        if (document.activeElement === inputMessage) {
-          setMsg(inputMessage.value);
-          await post();
-        }
+        await post(inputMessage.value);
       }
 
       if (event.which === 32) {
@@ -504,6 +517,7 @@ export default function App () {
       }
     });
   },[document.getElementById('input_message')])
+
   return (
     <center className="App">
       {
@@ -541,13 +555,17 @@ export default function App () {
               }
               </Container>
               </> :
+              <>
+              <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
               <p>Loading ipfs pubsub ...</p>
+              </>
             }
             </Col>
           </Row>
         </Container>
         </> :
         <>
+        <Container>
         <h1>Play for Fun</h1>
         <p>No matter how valuable is your NFT or where it is deployed, here we all have same value!</p>
         <div>
@@ -555,13 +573,29 @@ export default function App () {
         <p><small>This game is offchain and does not sends transactions to blockchain, it uses IPFS pubsub room to allow multiplayer</small></p>
         {
           !coinbase ?
-          <button onClick={loadWeb3Modal}>Connect Wallet</button> :
+          <Row>
+          <Col lg={6}>
+            <button onClick={loadWeb3Modal}>Connect Wallet</button>
+          </Col>
+          <Col lg={6}>
+            <button onClick={() => {
+              setMetadata({
+                metadata: {
+                  name: `Guest-${Math.random()}`,
+                  image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+                },
+                address: '0x000'
+              })
+            }}>Enter as Guest</button>
+          </Col>
+          </Row> :
           <>
           <p>Connected as {coinbase}</p>
           <h4>Select a NFT</h4>
           </>
         }
         </div>
+        </Container>
 
         {
 
@@ -653,27 +687,31 @@ export default function App () {
           </Row>
           </Container>
         }
-        <Container style={{paddingTop: '100px'}}>
-          <Row>
-            <Col md={2}>
-              <p><small><a href="https://phaser.io/" target="_blank">Done with phaser</a></small></p>
-            </Col>
-            <Col md={2}>
-              <p><small><a href="https://thehashavatars.com" target="_blank" >Modified from The HashAvatars</a></small></p>
-            </Col>
-            <Col md={2}>
-              <p><small><a href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank">Subgraphs by Leon Du</a></small></p>
-            </Col>
-            <Col md={2}>
-              <p><small><a href="https://github.com/henrique1837/thevibes" target="_blank">Github</a></small></p>
-            </Col>
-            <Col md={2}>
-              <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank">Tileset by Szadiart</a></small></p>
-            </Col>
-          </Row>
-        </Container>
         </>
       }
+
+      <Container style={{paddingTop: '100px'}}>
+        <Row>
+          <Col md={2}>
+            <p><small><a href="https://phaser.io/" target="_blank" rel="noreferrer">Done with phaser</a></small></p>
+          </Col>
+          <Col md={2}>
+            <p><small><a href="https://thehashavatars.com" target="_blank" rel="noreferrer">Modified from The HashAvatars</a></small></p>
+          </Col>
+          <Col md={2}>
+            <p><small><a href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Du</a></small></p>
+          </Col>
+          <Col md={2}>
+            <p><small><a href="https://github.com/henrique1837/thevibes" target="_blank" rel="noreferrer">Github</a></small></p>
+          </Col>
+          <Col md={2}>
+            <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</a></small></p>
+          </Col>
+          <Col md={2}>
+            <small><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAB/klEQVRYhe3XsU5UQRQG4E9M0MRGo6zaGGuBSAVqfA59C15DLEGWUt9EGxLtATFiI3HpsFEUC1yLe2523B12L7ujhfFPJnd25sx//jNn7rmz/EcP03iKA3SwEmN/jXcF3b62UkBAY95OTD7Aw+h3CggYyjuVWTCFc9G/WEBAzZHyZpHbqo9oTeC8FRz9vE9yxtMhooND7Ifx1pgiWrG2G1yHzni4U4JUxDzaeIdvOMIu1jE3Yu1EUWxhAz8NbmndTsKmiPOciC6OsYolXIq2hLWYq+2KOK+xEaSfcHeI3ULYdFVpKoJ51dYeJ86HVbeFsD3BbAkBbVVEq8nYqOr2LMbWSgjYDbLFZGxU1bwXY9ujyHOVsB+34vk2GbuQrK+rW/pu78TzdgP+kThSRXM5fp/HK4MpeBlzcCXGvpQQUKfgPm7iTcZ53V7jhio1jVLQBOtB9hyb0X+PR7iKa3iMvZjbxAuDB3dszKleqTrKPcxk7GbwIbE7wZ0SAugVoi6Wh9gtJ3bFCtF11anuL8WLBkvxj8RuJ9ZO7Hxb70C1/Z6O3Meo3bdmbBGtU4hmVdHu4Gu0bdWu1DnvF97oo5TW9/RCMm4UqYhGF5Jcfd9vqv4UtPQCGetWfDiB8xqfM7yNb8XHBQR8z/BmkUtB9vZ6RjTmTW/Fpf+a/QnefwS/ANmI8WcTkJHBAAAAAElFTkSuQmCC" alt="#" title="Users Connected to the Dapp" /> {connections + 1}</small>
+          </Col>
+        </Row>
+      </Container>
     </center>
   )
 }

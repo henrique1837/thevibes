@@ -1,14 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import * as IPFS from 'ipfs';
 function useIpfs() {
 
   const [ipfs,setIpfs] = useState();
 
-  useMemo(async () => {
+  useEffect( () => {
 
-    if(!ipfs){
-      try{
-        const newIpfs = await IPFS.create({
+
+        IPFS.create({
             EXPERIMENTAL: {
               pubsub: true
             },
@@ -37,32 +36,31 @@ function useIpfs() {
               Gateway: '',
             }
 
-        });
-        setIpfs(newIpfs)
-        for await (const res of newIpfs.name.resolve('/ipns/thehashavatars.com')) {
-          await newIpfs.pin.add(res)
-          console.log("Dapp pinned!")
-        }
-        for await (const res of newIpfs.name.resolve('/ipns/snowflakeshash.com')) {
-          await newIpfs.pin.add(res)
-          console.log("Dapp pinned!")
-        }
-        // Pin contents //
-        await newIpfs.pin.add("QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF");
-        await newIpfs.pin.add("bafkreiaz6syhyt45764hiiqm75tkkuwvfczzqgzcl6bugkjfh6sru4meyy");
-        await newIpfs.pin.add("QmQMdg8j9ssWbRxjKWb8JBW3PLAPvQN5cxZEP8DmhY1jrj");
-        await newIpfs.pin.add("QmeSesTyeikbLnVjQnsgvhfxJrQz6taYLZxkDsbve7ntej");
-        await newIpfs.pin.add("QmbKJ5wbYhio5h8NdGD6nyXmpJ7NFJqyqMAEbq8YwF8Kkk");
-        await newIpfs.pin.add("QmUs9rX2FsYUML9PCWMExJZfgcTPiXGV3FpArrTxd1Yf8i");
-        await newIpfs.pin.add("QmbUD9ekE1CBvZZsSC3PvrRE6oxgkrVfbHyNx7GaGCuX6o");
+        })
+        .then(async newIpfs => {
+          setIpfs(newIpfs)
+          for await (const res of newIpfs.name.resolve('/ipns/thehashavatars.com')) {
+            await newIpfs.pin.add(res)
+            console.log("Dapp pinned!")
+          }
+          for await (const res of newIpfs.name.resolve('/ipns/snowflakeshash.com')) {
+            await newIpfs.pin.add(res)
+            console.log("Dapp pinned!")
+          }
+          for await (const res of newIpfs.name.resolve('/ipns/thevibes.space')) {
+            await newIpfs.pin.add(res)
+            console.log("Dapp pinned!")
+          }
+          // Pin contents //
+        
 
-        console.log("IPFS started")
-      } catch(err){
+          console.log("IPFS started");
+      })
+      .catch(err => {
         console.log(err)
-      }
-    }
+      });
 
-  },[ipfs])
+  },[])
 
 
 

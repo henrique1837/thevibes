@@ -1,4 +1,4 @@
-import { useCallback,useMemo, useState,useEffect } from "react";
+import { useCallback,useMemo, useState } from "react";
 import { ethers } from "ethers";
 import Web3Modal from "web3modal";
 import WalletConnectProvider from "@walletconnect/web3-provider";

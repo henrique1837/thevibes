@@ -3,11 +3,25 @@ import Phaser from 'phaser'
 
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
+let metadata;
+let coinbaseGame;
+let contractAddress;
+let room;
+
+export const setAttributes = (mt,cG,cA,r) => {
+  metadata = mt
+  coinbaseGame = cG;
+  contractAddress = cA;
+  room = r
+}
 
 class MainScene extends Phaser.Scene {
-  constructor(metadata) {
+  constructor() {
     super({ key: 'MainScene' })
     this.metadata = metadata;
+    this.contractAddress = contractAddress;
+    this.coinbaseGame = coinbaseGame;
+    this.room = room;
   }
 
   init(){
@@ -69,7 +83,7 @@ class MainScene extends Phaser.Scene {
       percentText.destroy();
       assetText.destroy();
     });
-
+    console.log(this);
     this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
     this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
 

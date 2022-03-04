@@ -8,6 +8,8 @@ import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
 import Game from './Game';
+import {setAttributes} from './scenes/MainScene';
+
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 
@@ -79,15 +81,7 @@ export default function App () {
   const setMetadata = (obj) => {
       console.log(Game)
       const scene = Game.scene;
-      scene.metadata = obj.metadata;
-      //metadata = obj.metadata;
-      scene.coinbaseGame = coinbase;
-      //coinbaseGame = coinbase;
-      if(!scene.coinbaseGame){
-        scene.coinbaseGame = obj.metadata.name
-      }
-      scene.contractAddress = obj.address;
-      scene.room = ipfs;
+      setAttributes(obj.metadata,coinbase,obj.address,ipfs);
       setMetadataPlayer(obj.metadata);
       setInitialize(true);
   }
@@ -206,7 +200,7 @@ export default function App () {
         initialize ?
         <>
         {
-          ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} />
+          ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
         }
         <Container>
           <Row>

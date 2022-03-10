@@ -34,6 +34,3 @@ func send_everyone(topic: string, event: Message):
         -- iterate through them
         for sub <- subscribers par:
             call_subscriber(sub, event)
-
-func test():
-  send_everyone("test","test")

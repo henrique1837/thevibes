@@ -133,6 +133,18 @@ export default function App () {
     }
   },[client,coinbase,myOwnedNfts]);
 
+  useEffect(()=>{
+    window.addEventListener('keydown', async event => {
+      const inputMessage = document.getElementById('textInput');
+
+      if (event.which === 32) {
+        if (document.activeElement === inputMessage) {
+          inputMessage.value = inputMessage.value + ' ';
+        }
+      }
+    });
+
+  },[])
 
 
   return (
@@ -185,7 +197,7 @@ export default function App () {
         </div>
         </Container>
         {
-          loadingMyNFTs ?
+          loadingMyNFTs && isConnected ?
           <center>
             <p>Loading your NFTs ...</p>
           </center> :
@@ -195,7 +207,7 @@ export default function App () {
       }
 
       <center>
-        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message and press enter" />
+        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message" />
       </center>
 
       <Footer ipfs={isConnected}  />

@@ -17,7 +17,7 @@ function useFluence() {
 
   useEffect(async () => {
 
-    await Fluence.start({ connectTo: krasnodar[0] });
+    await Fluence.start({ connectTo: krasnodar[1] });
     const newRelay = Fluence.getStatus().relayPeerId;
     const newPeerId = Fluence.getStatus().peerId;
     setRelay(newRelay);

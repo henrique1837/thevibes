@@ -52,7 +52,7 @@ function useIpfs() {
             console.log("Dapp pinned!")
           }
           // Pin contents //
-        
+
 
           console.log("IPFS started");
       })

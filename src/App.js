@@ -6,16 +6,16 @@ import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
 
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
-import useIPFS from './hooks/useIPFS';
+import useFluence from './hooks/useFluence';
 import Game from './Game';
-import {setAttributes} from './scenes/MainScene';
-
-const topicMovements = 'hash-avatars/games/first-contact/movements';
-const topic = 'hash-avatars/games/first-contact';
+import {setAttributes,setTextInput} from './scenes/MainScene';
+import Footer from './components/Footer';
+import Chat from './components/Chat'
+import MyNfts from './components/MyNfts'
 
 
 export default function App () {
-  const [relayTime, setRelayTime] = useState(null);
+
 
   const gameRef = useRef(null);
   const {
@@ -26,7 +26,11 @@ export default function App () {
     loadWeb3Modal
   } = useWeb3Modal();
 
-  const { ipfs } = useIPFS();
+  const {
+    isConnected,
+    relay,
+    peerId
+  } = useFluence();
 
   const {
       client,
@@ -35,7 +39,6 @@ export default function App () {
   } = useClient();
 
 
-  const [msgs,setMsgs] = useState([]);
   const [myOwnedNfts,setMyOwnedNfts] = useState();
   const [myOwnedERC1155,setMyOwnedERC1155] = useState();
 
@@ -44,7 +47,6 @@ export default function App () {
   const [metadataPlayer,setMetadataPlayer] = useState();
   // Call `setInitialize` when you want to initialize your game! :)
   const [initialize, setInitialize] = useState(false);
-  const [msg,setMsg] = useState();
   const [subscribed,setSubscribed] = useState();
   const [peers,setPeersIds] = useState(0);
   const [connections,setConnectedUsers] = useState(0);
@@ -56,32 +58,12 @@ export default function App () {
     setInitialize(false)
   }
 
-  const post =  async (msgEnter) => {
-      const inputMessage = document.getElementById('input_message');
-      let message = msg;
-      if(!msg || msgEnter){
-        message = msgEnter
-      }
-      const msgString = JSON.stringify({
-        message: msg,
-        from: coinbase,
-        timestamp: (new Date()).getTime(),
-        metadata: metadataPlayer,
-        type: "message"
-      });
-      const msgToSend = new TextEncoder().encode(msgString)
-
-      await ipfs.pubsub.publish(topic, msgToSend);
-      inputMessage.value = '';
-      inputMessage.innerText = '';
-      setMsg('');
-
-  };
 
   const setMetadata = (obj) => {
       console.log(Game)
       const scene = Game.scene;
-      setAttributes(obj.metadata,coinbase,obj.address,ipfs);
+      setAttributes(obj.metadata,coinbase,obj.address,relay);
+      setTextInput(document.getElementById("textInput"));
       setMetadataPlayer(obj.metadata);
       setInitialize(true);
   }
@@ -150,49 +132,8 @@ export default function App () {
       setLoadingMyNFTs(false);
     }
   },[client,coinbase,myOwnedNfts]);
-  useMemo(async () => {
-    if(ipfs && !subscribed){
-      await ipfs.pubsub.subscribe(topic, async (msg) => {
-        console.log(new TextDecoder().decode(msg.data));
-        const obj = JSON.parse(new TextDecoder().decode(msg.data));
-        const newMsgs = msgs;
-        newMsgs.unshift(obj);
-        setMsgs(newMsgs);
-      });
-      setInterval(async () => {
-        const newPeerIds = await ipfs.pubsub.peers(topicMovements);
-        setPeersIds(newPeerIds);
-      },5000);
 
-      setInterval(async () => {
-        const newPeerIds = await ipfs.pubsub.peers(topic);
-        setConnectedUsers(newPeerIds.length);
-      },5000);
 
-      setSubscribed(true);
-
-    }
-
-  },[ipfs,msgs,subscribed]);
-
-  useEffect(()=>{
-    if(initialize){
-      window.addEventListener('keydown', async event => {
-        const inputMessage = document.getElementById('input_message');
-
-        if (event.which === 13) {
-          await post(inputMessage.value);
-        }
-
-        if (event.which === 32) {
-          if (document.activeElement === inputMessage) {
-            inputMessage.value = inputMessage.value + ' ';
-            setMsg(inputMessage.value)
-          }
-        }
-      });
-    }
-  },[document.getElementById('input_message')],initialize)
 
   return (
     <center className="App">
@@ -200,45 +141,8 @@ export default function App () {
         initialize ?
         <>
         {
-          ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
+          isConnected && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
         }
-        <Container>
-          <Row>
-            <Col md={12}>
-            {
-              ipfs ?
-              <>
-              <p>Total of {peers ? peers.length + 1 : 0} players</p>
-              <input  placeholder="Message" id='input_message' onChange={(e) => {setMsg(e.target.value);}} />
-              <button onClick={() => {post()}}>Send Message</button>
-              <Container>
-                {
-                msgs?.map((obj) => {
-
-                  return(
-                    <Row>
-                      <Col md={4}>
-                        <img src={obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/")} size='sm'style={{width: '50px'}} />
-                        <p><small>{obj.metadata.name}</small></p>
-                      </Col>
-                      <Col md={8}>
-                        <p>{obj.message}</p>
-                      </Col>
-                    </Row>
-
-                  )
-                })
-              }
-              </Container>
-              </> :
-              <>
-                <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-                <p>Loading ipfs pubsub ...</p>
-              </>
-            }
-            </Col>
-          </Row>
-        </Container>
         </> :
         <>
         <Container>
@@ -246,9 +150,12 @@ export default function App () {
         <p>No matter how valuable is your NFT or where it is deployed, here we all have same value!</p>
         <div>
         <p>Feel free to fork and modify it!</p>
-        <p><small>This game is offchain and does not sends transactions to blockchain, it uses IPFS pubsub room to allow multiplayer</small></p>
+        <p><small>
+          This game is offchain and does not sends transactions to blockchain, it uses <a href="https://doc.fluence.dev/aqua-book/libraries/aqua-dht" target="_blank" rel="noreferrer">Aqua DHT</a>
+          and <a href="https://doc.fluence.dev/docs/quick-start/1.-browser-to-browser-1" target="_blank" rel="noreferrer">Fluence js</a> to allow multiplayer
+        </small></p>
         {
-          !ipfs ?
+          !isConnected ?
           <>
             <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
             <p>Loading ipfs pubsub ...</p>
@@ -277,128 +184,21 @@ export default function App () {
         }
         </div>
         </Container>
-
         {
-
-          loadingMyNFTs &&
+          loadingMyNFTs ?
           <center>
             <p>Loading your NFTs ...</p>
-          </center>
-
-        }
-        {
-          myOwnedNfts?.length > 0 &&
-          <Container>
-          <h5>ERC721</h5>
-          <Row style={{textAlign: 'center'}}>
-          {
-            myOwnedNfts?.map(obj => {
-              if(!obj.metadata?.image){
-                return;
-              }
-              let tokenURI = obj.metadata.image;
-              let uri;
-              if(!tokenURI.includes("://")){
-                uri = `https://ipfs.io/ipfs/${tokenURI}`;
-              } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
-                uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-              } else {
-                uri = tokenURI
-              }
-              return(
-                <Col style={{paddingTop:'80px'}}>
-
-                  <center>
-                    <div>
-                      <p><b>{obj.metadata.name}</b></p>
-                    </div>
-                    <div>
-                      <Image src={uri} width="150px"/>
-                    </div>
-                    <div>
-                      <button onClick={() => {setMetadata(obj)}} size="small" mode="strong">Select</button>
-                    </div>
-                  </center>
-
-                </Col>
-              )
-            })
-          }
-          </Row>
-          </Container>
-        }
-        {
-          myOwnedERC1155?.length > 0 &&
-          <Container>
-          <h5>ERC1155</h5>
-          <Row style={{textAlign: 'center'}}>
-          {
-            myOwnedERC1155?.map(obj => {
-              if(!obj.metadata?.image){
-                return;
-              }
-              let tokenURI = obj.metadata.image;
-              let uri;
-              if(!tokenURI.includes("://")){
-                uri = `https://ipfs.io/ipfs/${tokenURI}`;
-              } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
-                uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-              } else {
-                uri = tokenURI
-              }
-              return(
-                <Col style={{paddingTop:'80px'}}>
-
-                  <center>
-                    <div>
-                      <p><b>{obj.metadata.name}</b></p>
-                    </div>
-                    <div>
-                      <Image src={uri} width="150px"/>
-                    </div>
-                    <div>
-                      <button onClick={() => {setMetadata(obj)}} size="small" mode="strong">Select</button>
-                    </div>
-                  </center>
-
-                </Col>
-              )
-            })
-          }
-          </Row>
-          </Container>
+          </center> :
+          <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
         }
         </>
       }
 
-      <Container style={{paddingTop: '100px'}}>
-        <Row>
-          <Col md={2}>
-            <p><small><a href="https://phaser.io/" target="_blank" rel="noreferrer">Done with phaser</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://thehashavatars.com" target="_blank" rel="noreferrer">Modified from The HashAvatars</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Du</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://github.com/henrique1837/thevibes" target="_blank" rel="noreferrer">Github</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</a></small></p>
-          </Col>
-          <Col md={2}>
-          {
-            ipfs ?
-            <small><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAB/klEQVRYhe3XsU5UQRQG4E9M0MRGo6zaGGuBSAVqfA59C15DLEGWUt9EGxLtATFiI3HpsFEUC1yLe2523B12L7ujhfFPJnd25sx//jNn7rmz/EcP03iKA3SwEmN/jXcF3b62UkBAY95OTD7Aw+h3CggYyjuVWTCFc9G/WEBAzZHyZpHbqo9oTeC8FRz9vE9yxtMhooND7Ifx1pgiWrG2G1yHzni4U4JUxDzaeIdvOMIu1jE3Yu1EUWxhAz8NbmndTsKmiPOciC6OsYolXIq2hLWYq+2KOK+xEaSfcHeI3ULYdFVpKoJ51dYeJ86HVbeFsD3BbAkBbVVEq8nYqOr2LMbWSgjYDbLFZGxU1bwXY9ujyHOVsB+34vk2GbuQrK+rW/pu78TzdgP+kThSRXM5fp/HK4MpeBlzcCXGvpQQUKfgPm7iTcZ53V7jhio1jVLQBOtB9hyb0X+PR7iKa3iMvZjbxAuDB3dszKleqTrKPcxk7GbwIbE7wZ0SAugVoi6Wh9gtJ3bFCtF11anuL8WLBkvxj8RuJ9ZO7Hxb70C1/Z6O3Meo3bdmbBGtU4hmVdHu4Gu0bdWu1DnvF97oo5TW9/RCMm4UqYhGF5Jcfd9vqv4UtPQCGetWfDiB8xqfM7yNb8XHBQR8z/BmkUtB9vZ6RjTmTW/Fpf+a/QnefwS/ANmI8WcTkJHBAAAAAElFTkSuQmCC" alt="#" title="Users Connected to the Dapp" /> {connections + 1}</small> :
-            <small><Spinner animation="border" size="sm" /> Loading ipfs pubsub ...</small>
+      <center>
+        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message and press enter" />
+      </center>
 
-          }
-
-          </Col>
-        </Row>
-      </Container>
+      <Footer ipfs={isConnected}  />
     </center>
   )
 }

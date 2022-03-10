@@ -20,6 +20,9 @@ const Game = {
       debug: false
     }
   },
+  dom: {
+      createContainer: true
+  },
   scene: MainScene
 };
 

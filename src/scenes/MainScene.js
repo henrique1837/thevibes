@@ -1,18 +1,28 @@
 import Phaser from 'phaser'
-
+import { registerSubscriberAPI,send_everyone } from "../_aqua/subscribe";
+import { initTopicAndSubscribeBlocking } from "../_aqua/export";
 
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
+const serviceId = "TheVibesTestDapp"
+
 let metadata;
 let coinbaseGame;
 let contractAddress;
 let room;
+let relay;
+let textInput;
 
-export const setAttributes = (mt,cG,cA,r) => {
+
+export const setAttributes = (mt,cG,cA,r,tI) => {
   metadata = mt
   coinbaseGame = cG;
   contractAddress = cA;
-  room = r
+  relay = r;
+}
+
+export const setTextInput = (tI) => {
+  textInput = tI;
 }
 
 class MainScene extends Phaser.Scene {
@@ -22,6 +32,8 @@ class MainScene extends Phaser.Scene {
     this.contractAddress = contractAddress;
     this.coinbaseGame = coinbaseGame;
     this.room = room;
+    this.relay = relay;
+    this.chatMessages = [];
   }
 
   init(){
@@ -84,6 +96,8 @@ class MainScene extends Phaser.Scene {
       assetText.destroy();
     });
     console.log(this);
+    this.load.html("form", "./form.html");
+
     this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
     this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
 
@@ -146,7 +160,18 @@ class MainScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.room.pubsub.subscribe(topicMovements,this.handleMessages);
+    // create topic (if not exists) and subscribe on it
+    await initTopicAndSubscribeBlocking(
+        topicMovements, "Player Joined", this.relay, serviceId,
+        (s) => console.log(`node ${s} saved the record movement`)
+    );
+    await registerSubscriberAPI(serviceId, {
+        receive_event: (event) => {
+          console.log("movement!!!!!!!!!!!!! ",event)
+          this.handleMessages(event)
+        }
+    });
+    //this.room.pubsub.subscribe(topicMovements,this.handleMessages);
 
 
 
@@ -160,7 +185,32 @@ class MainScene extends Phaser.Scene {
     },null,this);
     this.physics.add.collider(this.player,this.otherPlayers,this.handleCollision,null, this);
 
+    this.input.on('pointerup', async function (pointer) {
+        let target = {
+          x: 0,
+          y: 0
+        }
+        target.x = pointer.x;
+        target.y = pointer.y;
+        const msg = JSON.stringify({
+          contractAddress: this.contractAddress,
+          metadata: this.metadata,
+          player: this.player,
+          from: this.coinbaseGame,
+          type: "movement"
+        });
+        send_everyone(topicMovements,msg)
+        //const msgSend = new TextEncoder().encode(msg)
 
+        //await this.room.pubsub.publish(topicMovements, msgSend)
+
+        // Move at 200 px/s:
+        this.player.moveToTarget = target;
+        this.player.setVelocity(150);
+
+    }, this);
+
+    this.prepareChat();
     this.sendMessagePlayerEntered();
 
 
@@ -170,6 +220,8 @@ class MainScene extends Phaser.Scene {
   update = async () => {
 
     //this.player.setVelocity(0);
+    this.chat.x = this.player.body.position.x + 280 ;
+    this.chat.y = this.player.body.position.y - 150;
 
     const msg = JSON.stringify({
       contractAddress: this.contractAddress,
@@ -179,8 +231,9 @@ class MainScene extends Phaser.Scene {
       type: "movement"
     });
     if(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown){
-      const msgSend = new TextEncoder().encode(msg)
-      await this.room.pubsub.publish(topicMovements, msgSend)
+      //const msgSend = new TextEncoder().encode(msg)
+      //await this.room.pubsub.publish(topicMovements, msgSend)
+      await send_everyone(topicMovements,msg);
     }
     if (this.cursors.left.isDown){
       this.player.setVelocityX(-150);
@@ -196,13 +249,39 @@ class MainScene extends Phaser.Scene {
 
   }
 
+  prepareChat = () => {
+    //const textInput = this.add.dom(this.player.x, this.player.y).createFromCache("form")
+    console.log(textInput)
+    //this.textInput.fixedToCamera = true;
+
+    this.chat = this.add.text(this.player.x + 280, this.player.y - 150, "", { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
+    this.chat.setFixedSize(400, 300);
+
+    this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    this.enterKey.on("down", async event => {
+      if (textInput.value != "") {
+        const obj = {
+          message: textInput.value,
+          from: coinbaseGame,
+          timestamp: (new Date()).getTime(),
+          metadata: metadata,
+          type: "message"
+        }
+        const msgString = JSON.stringify(obj);
+        await send_everyone(topicMovements, msgString)
+        textInput.value = "";
+    }
+})
+  }
+
   handleMessages = async (msg) => {
     try{
-      const obj = JSON.parse(new TextDecoder().decode(msg.data));
+      //const obj = JSON.parse(new TextDecoder().decode(msg.data));
+      const obj = JSON.parse(msg);
       if(obj.type === "movement"){
         let added = false;
         this.otherPlayers.getChildren().forEach(function (otherPlayer) {
-          if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== this.contractAddress) {
+          if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
             otherPlayer.setVelocityX(0);
             otherPlayer.setVelocityY(0);
             otherPlayer.setPosition(obj.player.x, obj.player.y);
@@ -210,14 +289,14 @@ class MainScene extends Phaser.Scene {
           }
         });
         this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
-          if (obj.metadata.name === otherPlayer.name && obj.contractAddress === this.contractAddress) {
+          if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
             otherPlayer.setVelocityX(0);
             otherPlayer.setVelocityY(0);
             otherPlayer.setPosition(obj.player.x, obj.player.y);
             added = true;
           }
         });
-        if(!added && obj.metadata.name !== this.metadata.name){
+        if(!added && obj.metadata.name !== metadata.name){
           const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
             .setInteractive();
           otherPlayer.setBounce(0);
@@ -240,7 +319,7 @@ class MainScene extends Phaser.Scene {
           otherPlayer.on('pointerdown', function (pointer) {
             window.open(obj.metadata.external_url,"_blank");
           });
-          if(obj.contractAddress !== this.contractAddress){
+          if(obj.contractAddress !== contractAddress){
             this.otherPlayers.add(otherPlayer);
           } else {
             this.friendlyPlayers.add(otherPlayer);
@@ -257,10 +336,21 @@ class MainScene extends Phaser.Scene {
             metadata: this.metadata,
             type: "message"
           });
-          const msgSend = new TextEncoder().encode(str)
-          await this.room.pubsub.publish(topic, msgSend)
+          //const msgSend = new TextEncoder().encode(str)
+          //await this.room.pubsub.publish(topic, msgSend)
+          send_everyone(topicMovements,str);
         }
       }
+
+      if(obj.type === "message"){
+        this.chatMessages.push(`${obj.metadata.name}: ${obj.message}`);
+        if(this.chatMessages.length > 11) {
+            this.chatMessages.shift();
+        }
+        this.chat.setText(this.chatMessages);
+
+      }
+
     } catch(err){
       console.log(err)
     }
@@ -280,8 +370,9 @@ class MainScene extends Phaser.Scene {
         name: player.name,
         type: "collision"
       });
-      const msgSend = new TextEncoder().encode(msg)
-      await this.room.pubsub.publish(topicMovements, msgSend)
+      //const msgSend = new TextEncoder().encode(msg)
+      //await this.room.pubsub.publish(topicMovements, msgSend)
+      send_everyone(topicMovements,msg);
     }
     player.setVelocity(0,0);
     player.setAcceleration(0,0);
@@ -293,15 +384,16 @@ class MainScene extends Phaser.Scene {
 
   sendMessagePlayerEntered = async () => {
     let msg = JSON.stringify({
-      message: `${this.metadata.name} joined HashVillage!`,
+      message: `${this.metadata.name} joined`,
       from: this.coinbaseGame,
       timestamp: (new Date()).getTime(),
       metadata: this.metadata,
       type: "message"
     });
+    send_everyone(topicMovements,msg);
 
-    let msgSend = new TextEncoder().encode(msg)
-    await this.room.pubsub.publish(topic, msgSend)
+    //let msgSend = new TextEncoder().encode(msg)
+    //await this.room.pubsub.publish(topic, msgSend)
 
 
     msg = JSON.stringify({
@@ -311,11 +403,13 @@ class MainScene extends Phaser.Scene {
       from: this.coinbaseGame,
       type: "movement"
     });
+    send_everyone(topicMovements,msg);
 
 
-    msgSend = new TextEncoder().encode(msg)
-    await this.room.pubsub.publish(topicMovements, msgSend)
+    //msgSend = new TextEncoder().encode(msg)
+    //await this.room.pubsub.publish(topicMovements, msgSend)
   }
+
 }
 
 

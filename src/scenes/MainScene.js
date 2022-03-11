@@ -135,7 +135,7 @@ class MainScene extends Phaser.Scene {
     this.cameras.main.setZoom(2);
 
     //  Add a player ship and camera follow
-    this.player = this.physics.add.sprite(Phaser.Math.Between(500, 4500), Phaser.Math.Between(500, 4500), 'ship');
+    this.player = this.physics.add.sprite(Phaser.Math.Between(4200, 4500), Phaser.Math.Between(4200, 4500), 'ship');
     this.player.setBounce(0).setCollideWorldBounds(true);
     this.player.displayWidth = 64;
     //scale evenly
@@ -166,6 +166,7 @@ class MainScene extends Phaser.Scene {
     );
     await registerSubscriberAPI(serviceId, {
         receive_event: (event) => {
+          console.log(event)
           this.handleMessages(event)
         }
     });
@@ -183,30 +184,6 @@ class MainScene extends Phaser.Scene {
     },null,this);
     this.physics.add.collider(this.player,this.otherPlayers,this.handleCollision,null, this);
 
-    this.input.on('pointerup', async function (pointer) {
-        let target = {
-          x: 0,
-          y: 0
-        }
-        target.x = pointer.x;
-        target.y = pointer.y;
-        const msg = JSON.stringify({
-          contractAddress: this.contractAddress,
-          metadata: this.metadata,
-          player: this.player,
-          from: this.coinbaseGame,
-          type: "movement"
-        });
-        send_everyone(topicMovements,msg)
-        //const msgSend = new TextEncoder().encode(msg)
-
-        //await this.room.pubsub.publish(topicMovements, msgSend)
-
-        // Move at 200 px/s:
-        this.player.moveToTarget = target;
-        this.player.setVelocity(150);
-
-    }, this);
 
     this.prepareChat();
     this.sendMessagePlayerEntered();
@@ -223,18 +200,6 @@ class MainScene extends Phaser.Scene {
       this.chat.y = this.player.body.position.y - 150;
     }
 
-    const msg = JSON.stringify({
-      contractAddress: this.contractAddress,
-      metadata: this.metadata,
-      player: this.player,
-      from: this.coinbaseGame,
-      type: "movement"
-    });
-    if(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown){
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.room.pubsub.publish(topicMovements, msgSend)
-      send_everyone(topicMovements,msg);
-    }
     if (this.cursors.left.isDown){
       this.player.setVelocityX(-150);
     } else if (this.cursors.right.isDown){
@@ -245,6 +210,32 @@ class MainScene extends Phaser.Scene {
       this.player.setVelocityY(150);
     } else {
       this.player.setVelocity(0);
+    }
+    const obj = {
+      contractAddress: this.contractAddress,
+      metadata: this.metadata,
+      player: this.player,
+      velocity: this.player.body.velocity,
+      from: this.coinbaseGame,
+      type: "movement"
+    };
+    const msg = JSON.stringify(obj);
+
+    if((this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
+       !this.msgMovementStarted){
+      //const msgSend = new TextEncoder().encode(msg)
+      //await this.room.pubsub.publish(topicMovements, msgSend)
+      this.msgMovementStarted = true;
+      send_everyone(topicMovements,msg)
+
+    }
+    if(!(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
+       this.msgMovementStarted){
+      //const msgSend = new TextEncoder().encode(msg)
+      //await this.room.pubsub.publish(topicMovements, msgSend)
+      this.msgMovementStarted = false;
+      send_everyone(topicMovements,msg)
+
     }
 
   }
@@ -280,26 +271,31 @@ class MainScene extends Phaser.Scene {
         let added = false;
         this.otherPlayers.getChildren().forEach(function (otherPlayer) {
           if (obj.metadata.name === otherPlayer.name && obj.contractAddress !== contractAddress) {
-            otherPlayer.setVelocityX(0);
-            otherPlayer.setVelocityY(0);
             otherPlayer.setPosition(obj.player.x, obj.player.y);
+
+            //otherPlayer.setPosition(obj.player.x, obj.player.y);
             added = true;
           }
         });
         this.friendlyPlayers.getChildren().forEach(function (otherPlayer) {
           if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
-            otherPlayer.setVelocityX(0);
-            otherPlayer.setVelocityY(0);
-            otherPlayer.setPosition(obj.player.x, obj.player.y);
+            console.log(obj.velocity)
+            otherPlayer.setVelocity(obj.velocity.x,obj.velocity.y);
+            if(obj.velocity.x == 0 && obj.velocity.y === 0 ){
+              otherPlayer.setPosition(obj.player.x,obj.player.y)
+            }
+
+            //otherPlayer.setPosition(obj.player.x, obj.player.y);
             added = true;
           }
         });
         if(!added){
-          const otherPlayer = this.physics.add.sprite(0, 0,  obj.metadata.name)
+          const otherPlayer = this.physics.add.sprite(obj.player.x,obj.player.y,  obj.metadata.name)
             .setInteractive();
+          otherPlayer.setFriction(1);
+
           otherPlayer.setBounce(0);
-          otherPlayer.setVelocityX(0);
-          otherPlayer.setVelocityY(0);
+          otherPlayer.setVelocity(0);
           otherPlayer.scaleX = this.player.scaleX;
           otherPlayer.scaleY = otherPlayer.scaleX;
 
@@ -326,6 +322,7 @@ class MainScene extends Phaser.Scene {
             metadata: this.metadata,
             contractAddress: this.contractAddress,
             player: this.player,
+            velocity: this.player.body.velocity,
             from: this.coinbaseGame,
             type: "movement"
           });
@@ -407,10 +404,11 @@ class MainScene extends Phaser.Scene {
       metadata: this.metadata,
       contractAddress: this.contractAddress,
       player: this.player,
+      velocity: this.player.body.velocity,
       from: this.coinbaseGame,
       type: "movement"
     });
-    send_everyone(topicMovements,msg);
+    await send_everyone(topicMovements,msg);
 
 
     //msgSend = new TextEncoder().encode(msg)

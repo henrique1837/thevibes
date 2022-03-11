@@ -170,7 +170,7 @@ export default function App () {
           !isConnected ?
           <>
             <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-            <p>Loading ipfs pubsub ...</p>
+            <p>Loading Fluence ...</p>
           </> :
           !coinbase ?
           <Row>

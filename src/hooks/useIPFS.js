@@ -20,8 +20,8 @@ function useIpfs() {
 
                   // Websocket:
                   // '/dns4/ws-star-signal-2.servep2p.com/tcp/443//wss/p2p-websocket-star',
-                  '/dns4/star.thedisco.zone/tcp/9090/wss/p2p-webrtc-star',
-                  '/dns6/star.thedisco.zone/tcp/9090/wss/p2p-webrtc-star',
+                  //'/dns4/star.thedisco.zone/tcp/9090/wss/p2p-webrtc-star',
+                  //'/dns6/star.thedisco.zone/tcp/9090/wss/p2p-webrtc-star',
                   '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star/'
                   // Local signal server
                   //'/ip4/127.0.0.1/tcp/4711/ws/p2p-websocket-star'
@@ -52,7 +52,7 @@ function useIpfs() {
             console.log("Dapp pinned!")
           }
           // Pin contents //
-        
+
 
           console.log("IPFS started");
       })

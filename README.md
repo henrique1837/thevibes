@@ -1,3 +1,25 @@
+# TheVibes
+
+A place where NFTs can play togheter and have fun. Currently playable with NFTs from  Rinkeby, Ethereum, BSC, Avalanche, XDAI, Polygon.
+
+Users can also enter as guest (no NFT in wallet / not connected the wallet to the dapp).
+
+Offchain Free to Play (Play for Fun!) game using IPFS pubsub to allow chat messages between players and show positions/movements in the map.
+
+Maps were done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
+
+NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155 (and others networks).  
+
+Still a Proof of Concept:
+
+- Is it possible to make a multiplayer game using IPFS pubsub (or frameworks that were constructed on top of IPFS)?  
+- What are the issues ?
+- How to prevent cheat in the game ?  
+
+## Demo
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

@@ -4,18 +4,25 @@ import { IonPhaser } from '@ion-phaser/react'
 import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
 
 
+
+
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
 import Game from './Game';
-import {setAttributes} from './scenes/MainScene';
+import {setAttributes,setTextInput} from './scenes/MainScene';
+
+import Footer from './components/Footer';
+import MyNfts from './components/MyNfts';
+
+
 
 const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 
-
 export default function App () {
-  const [relayTime, setRelayTime] = useState(null);
+
+  const [graphErr,setGraphErr] = useState();
 
   const gameRef = useRef(null);
   const {
@@ -83,6 +90,7 @@ export default function App () {
       const scene = Game.scene;
       setAttributes(obj.metadata,coinbase,obj.address,ipfs);
       setMetadataPlayer(obj.metadata);
+      setTextInput(document.getElementById("textInput"));
       setInitialize(true);
   }
 
@@ -136,18 +144,24 @@ export default function App () {
   },[client,coinbase,netId]);
   useMemo(async () => {
     if(client && coinbase && !myOwnedNfts){
-      const ownedNfts = await getNftsFrom(coinbase);
-      const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
-      const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
-      let promises = erc721Tokens.map(getMetadata);
-      const newMyOwnedNfts = await Promise.all(promises)
-      setMyOwnedNfts(newMyOwnedNfts);
+      try{
+        const ownedNfts = await getNftsFrom(coinbase);
+        const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
+        const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
+        let promises = erc721Tokens.map(getMetadata);
+        const newMyOwnedNfts = await Promise.all(promises)
+        setMyOwnedNfts(newMyOwnedNfts);
 
-      promises = erc1155Tokens.map(getMetadata);
-      const newMyOwnedERC1155 = await Promise.all(promises)
-      setMyOwnedERC1155(newMyOwnedERC1155);
+        promises = erc1155Tokens.map(getMetadata);
+        const newMyOwnedERC1155 = await Promise.all(promises)
+        setMyOwnedERC1155(newMyOwnedERC1155);
 
-      setLoadingMyNFTs(false);
+        setLoadingMyNFTs(false);
+      } catch(err){
+        console.log(err)
+        setGraphErr(true)
+        setLoadingMyNFTs(false);
+      }
     }
   },[client,coinbase,myOwnedNfts]);
   useMemo(async () => {
@@ -176,23 +190,17 @@ export default function App () {
   },[ipfs,msgs,subscribed]);
 
   useEffect(()=>{
-    if(initialize){
-      window.addEventListener('keydown', async event => {
-        const inputMessage = document.getElementById('input_message');
+    window.addEventListener('keydown', async event => {
+      const inputMessage = document.getElementById('textInput');
 
-        if (event.which === 13) {
-          await post(inputMessage.value);
+      if (event.which === 32) {
+        if (document.activeElement === inputMessage) {
+          inputMessage.value = inputMessage.value + ' ';
         }
+      }
+    });
 
-        if (event.which === 32) {
-          if (document.activeElement === inputMessage) {
-            inputMessage.value = inputMessage.value + ' ';
-            setMsg(inputMessage.value)
-          }
-        }
-      });
-    }
-  },[document.getElementById('input_message')],initialize)
+  },[])
 
   return (
     <center className="App">
@@ -202,43 +210,6 @@ export default function App () {
         {
           ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
         }
-        <Container>
-          <Row>
-            <Col md={12}>
-            {
-              ipfs ?
-              <>
-              <p>Total of {peers ? peers.length + 1 : 0} players</p>
-              <input  placeholder="Message" id='input_message' onChange={(e) => {setMsg(e.target.value);}} />
-              <button onClick={() => {post()}}>Send Message</button>
-              <Container>
-                {
-                msgs?.map((obj) => {
-
-                  return(
-                    <Row>
-                      <Col md={4}>
-                        <img src={obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/")} size='sm'style={{width: '50px'}} />
-                        <p><small>{obj.metadata.name}</small></p>
-                      </Col>
-                      <Col md={8}>
-                        <p>{obj.message}</p>
-                      </Col>
-                    </Row>
-
-                  )
-                })
-              }
-              </Container>
-              </> :
-              <>
-                <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-                <p>Loading ipfs pubsub ...</p>
-              </>
-            }
-            </Col>
-          </Row>
-        </Container>
         </> :
         <>
         <Container>
@@ -280,125 +251,36 @@ export default function App () {
 
         {
 
-          loadingMyNFTs &&
+          loadingMyNFTs && ipfs ?
           <center>
             <p>Loading your NFTs ...</p>
+          </center> :
+          !graphErr ?
+          <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} /> :
+          ipfs &&
+          <center>
+            <p>Could not load your NFTs, try changing network or enter as guest</p>
+            <button onClick={() => {
+              setMetadata({
+                metadata: {
+                  name: `Guest-${Math.random()}`,
+                  image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+                },
+                address: '0x000'
+              })
+            }}>Enter as Guest</button>
           </center>
 
-        }
-        {
-          myOwnedNfts?.length > 0 &&
-          <Container>
-          <h5>ERC721</h5>
-          <Row style={{textAlign: 'center'}}>
-          {
-            myOwnedNfts?.map(obj => {
-              if(!obj.metadata?.image){
-                return;
-              }
-              let tokenURI = obj.metadata.image;
-              let uri;
-              if(!tokenURI.includes("://")){
-                uri = `https://ipfs.io/ipfs/${tokenURI}`;
-              } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
-                uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-              } else {
-                uri = tokenURI
-              }
-              return(
-                <Col style={{paddingTop:'80px'}}>
-
-                  <center>
-                    <div>
-                      <p><b>{obj.metadata.name}</b></p>
-                    </div>
-                    <div>
-                      <Image src={uri} width="150px"/>
-                    </div>
-                    <div>
-                      <button onClick={() => {setMetadata(obj)}} size="small" mode="strong">Select</button>
-                    </div>
-                  </center>
-
-                </Col>
-              )
-            })
-          }
-          </Row>
-          </Container>
-        }
-        {
-          myOwnedERC1155?.length > 0 &&
-          <Container>
-          <h5>ERC1155</h5>
-          <Row style={{textAlign: 'center'}}>
-          {
-            myOwnedERC1155?.map(obj => {
-              if(!obj.metadata?.image){
-                return;
-              }
-              let tokenURI = obj.metadata.image;
-              let uri;
-              if(!tokenURI.includes("://")){
-                uri = `https://ipfs.io/ipfs/${tokenURI}`;
-              } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
-                uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-              } else {
-                uri = tokenURI
-              }
-              return(
-                <Col style={{paddingTop:'80px'}}>
-
-                  <center>
-                    <div>
-                      <p><b>{obj.metadata.name}</b></p>
-                    </div>
-                    <div>
-                      <Image src={uri} width="150px"/>
-                    </div>
-                    <div>
-                      <button onClick={() => {setMetadata(obj)}} size="small" mode="strong">Select</button>
-                    </div>
-                  </center>
-
-                </Col>
-              )
-            })
-          }
-          </Row>
-          </Container>
         }
         </>
       }
 
-      <Container style={{paddingTop: '100px'}}>
-        <Row>
-          <Col md={2}>
-            <p><small><a href="https://phaser.io/" target="_blank" rel="noreferrer">Done with phaser</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://thehashavatars.com" target="_blank" rel="noreferrer">Modified from The HashAvatars</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Du</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://github.com/henrique1837/thevibes" target="_blank" rel="noreferrer">Github</a></small></p>
-          </Col>
-          <Col md={2}>
-            <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</a></small></p>
-          </Col>
-          <Col md={2}>
-          {
-            ipfs ?
-            <small><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAB/klEQVRYhe3XsU5UQRQG4E9M0MRGo6zaGGuBSAVqfA59C15DLEGWUt9EGxLtATFiI3HpsFEUC1yLe2523B12L7ujhfFPJnd25sx//jNn7rmz/EcP03iKA3SwEmN/jXcF3b62UkBAY95OTD7Aw+h3CggYyjuVWTCFc9G/WEBAzZHyZpHbqo9oTeC8FRz9vE9yxtMhooND7Ifx1pgiWrG2G1yHzni4U4JUxDzaeIdvOMIu1jE3Yu1EUWxhAz8NbmndTsKmiPOciC6OsYolXIq2hLWYq+2KOK+xEaSfcHeI3ULYdFVpKoJ51dYeJ86HVbeFsD3BbAkBbVVEq8nYqOr2LMbWSgjYDbLFZGxU1bwXY9ujyHOVsB+34vk2GbuQrK+rW/pu78TzdgP+kThSRXM5fp/HK4MpeBlzcCXGvpQQUKfgPm7iTcZ53V7jhio1jVLQBOtB9hyb0X+PR7iKa3iMvZjbxAuDB3dszKleqTrKPcxk7GbwIbE7wZ0SAugVoi6Wh9gtJ3bFCtF11anuL8WLBkvxj8RuJ9ZO7Hxb70C1/Z6O3Meo3bdmbBGtU4hmVdHu4Gu0bdWu1DnvF97oo5TW9/RCMm4UqYhGF5Jcfd9vqv4UtPQCGetWfDiB8xqfM7yNb8XHBQR8z/BmkUtB9vZ6RjTmTW/Fpf+a/QnefwS/ANmI8WcTkJHBAAAAAElFTkSuQmCC" alt="#" title="Users Connected to the Dapp" /> {connections + 1}</small> :
-            <small><Spinner animation="border" size="sm" /> Loading ipfs pubsub ...</small>
+      <center>
+        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message" />
+      </center>
 
-          }
+      <Footer ipfs={ipfs} connections={connections}  />
 
-          </Col>
-        </Row>
-      </Container>
     </center>
   )
 }

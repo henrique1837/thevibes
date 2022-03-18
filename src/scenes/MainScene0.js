@@ -1,7 +1,8 @@
 import Phaser from 'phaser'
-import { Waku,WakuMessage } from 'js-waku';
+import { registerSubscriberAPI,send_everyone } from "../_aqua/subscribe";
+import { initTopicAndSubscribeBlocking } from "../_aqua/export";
 
-const topicMovements = 'hash-avatars/gamesv1/first-contact/movements/proto';
+const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 const serviceId = "TheVibesTestDapp"
 
@@ -9,7 +10,7 @@ let metadata;
 let coinbaseGame;
 let contractAddress;
 let room;
-let waku;
+let relay;
 let textInput;
 
 
@@ -17,7 +18,7 @@ export const setAttributes = (mt,cG,cA,r,tI) => {
   metadata = mt
   coinbaseGame = cG;
   contractAddress = cA;
-  waku = r;
+  relay = r;
 }
 
 export const setTextInput = (tI) => {
@@ -31,7 +32,7 @@ class MainScene extends Phaser.Scene {
     this.contractAddress = contractAddress;
     this.coinbaseGame = coinbaseGame;
     this.room = room;
-    this.waku = waku;
+    this.relay = relay;
     this.chatMessages = [];
   }
 
@@ -157,7 +158,18 @@ class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.friendlyPlayers, waterLayer);
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.waku.relay.addObserver(this.handleMessages,[topicMovements]);
+
+    // create topic (if not exists) and subscribe on it
+    await initTopicAndSubscribeBlocking(
+        topicMovements, "Player Joined", this.relay, serviceId,
+        (s) => console.log(`node ${s} saved the record movement`)
+    );
+    await registerSubscriberAPI(serviceId, {
+        receive_event: (event) => {
+          console.log(event)
+          this.handleMessages(event)
+        }
+    });
     //this.room.pubsub.subscribe(topicMovements,this.handleMessages);
 
 
@@ -214,7 +226,7 @@ class MainScene extends Phaser.Scene {
       //const msgSend = new TextEncoder().encode(msg)
       //await this.room.pubsub.publish(topicMovements, msgSend)
       this.msgMovementStarted = true;
-      this.sendMessage(topicMovements,msg)
+      send_everyone(topicMovements,msg)
 
     }
     if(!(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
@@ -222,18 +234,10 @@ class MainScene extends Phaser.Scene {
       //const msgSend = new TextEncoder().encode(msg)
       //await this.room.pubsub.publish(topicMovements, msgSend)
       this.msgMovementStarted = false;
-      this.sendMessage(topicMovements,msg)
+      send_everyone(topicMovements,msg)
 
     }
 
-  }
-
-  sendMessage = async (topic,msg) => {
-    const wakuMessage = await WakuMessage.fromUtf8String(
-      msg,
-      topic
-    );
-    await this.waku.relay.send(wakuMessage);
   }
 
   prepareChat = () => {
@@ -252,35 +256,16 @@ class MainScene extends Phaser.Scene {
           type: "message"
         }
         const msgString = JSON.stringify(obj);
-        await this.sendMessage(topicMovements, msgString);
-        this.chatMessages.push(`${metadata.name}: ${textInput.value}`);
-        if(this.chatMessages.length > 11) {
-            this.chatMessages.shift();
-        }
-        this.chat.setText(this.chatMessages);
+        send_everyone(topicMovements, msgString)
         textInput.value = "";
       }
     })
   }
-  handleLastMessages = (retrievedMessages) => {
-    const articles = retrievedMessages
-    const handleMessages = this.handleMessages;
-    console.log(articles)
-    articles.map(wakuMessage => {
-      try{
-        console.log(`Message Stored Received: ${wakuMessage.payloadAsUtf8}`);
-        handleMessages(wakuMessage.payloadAsUtf8);
-      } catch(err){
-        console.log(err)
-      }
-    });
 
-  }
   handleMessages = (msg) => {
     try{
       //const obj = JSON.parse(new TextDecoder().decode(msg.data));
-      console.log(msg)
-      const obj = JSON.parse(msg.payloadAsUtf8);
+      const obj = JSON.parse(msg);
       if(obj.type === "movement" && obj.metadata.name !== metadata.name){
         console.log("Movement from "+obj.metadata.name);
         let added = false;
@@ -341,7 +326,7 @@ class MainScene extends Phaser.Scene {
             from: this.coinbaseGame,
             type: "movement"
           });
-          this.sendMessage(topicMovements,msgSend);
+          send_everyone(topicMovements,msgSend);
 
         }
       }
@@ -357,7 +342,7 @@ class MainScene extends Phaser.Scene {
           });
           //const msgSend = new TextEncoder().encode(str)
           //await this.room.pubsub.publish(topic, msgSend)
-          this.sendMessage(topicMovements,str);
+          send_everyone(topicMovements,str);
         }
       }
 
@@ -382,7 +367,8 @@ class MainScene extends Phaser.Scene {
         type: "collision"
       });
       otherPlayer.destroy();
-      await this.sendMessage(topicMovements, msg)
+      const msgSend = new TextEncoder().encode(msg)
+      await this.room.pubsub.publish(topicMovements, msgSend)
     } else if(player.body.touching.up) {
       const msg = JSON.stringify({
         name: player.name,
@@ -390,7 +376,7 @@ class MainScene extends Phaser.Scene {
       });
       //const msgSend = new TextEncoder().encode(msg)
       //await this.room.pubsub.publish(topicMovements, msgSend)
-      this.sendMessage(topicMovements,msg);
+      send_everyone(topicMovements,msg);
     }
     player.setVelocity(0,0);
     player.setAcceleration(0,0);
@@ -408,12 +394,7 @@ class MainScene extends Phaser.Scene {
       metadata: this.metadata,
       type: "message"
     });
-    await this.sendMessage(topicMovements,msg);
-    this.chatMessages.push(`${this.metadata.name}: ${this.metadata.name}`);
-    if(this.chatMessages.length > 11) {
-        this.chatMessages.shift();
-    }
-    this.chat.setText(this.chatMessages);
+    send_everyone(topicMovements,msg);
 
     //let msgSend = new TextEncoder().encode(msg)
     //await this.room.pubsub.publish(topic, msgSend)
@@ -427,7 +408,7 @@ class MainScene extends Phaser.Scene {
       from: this.coinbaseGame,
       type: "movement"
     });
-    await this.sendMessage(topicMovements,msg);
+    await send_everyone(topicMovements,msg);
 
 
     //msgSend = new TextEncoder().encode(msg)

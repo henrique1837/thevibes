@@ -6,11 +6,10 @@ import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
 
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
-import useFluence from './hooks/useFluence';
+import useWaku from './hooks/useWaku';
 import Game from './Game';
 import {setAttributes,setTextInput} from './scenes/MainScene';
 import Footer from './components/Footer';
-import Chat from './components/Chat'
 import MyNfts from './components/MyNfts'
 
 
@@ -27,10 +26,8 @@ export default function App () {
   } = useWeb3Modal();
 
   const {
-    isConnected,
-    relay,
-    peerId
-  } = useFluence();
+    waku
+  } = useWaku();
 
   const {
       client,
@@ -62,7 +59,7 @@ export default function App () {
   const setMetadata = (obj) => {
       console.log(Game)
       const scene = Game.scene;
-      setAttributes(obj.metadata,coinbase,obj.address,relay);
+      setAttributes(obj.metadata,coinbase,obj.address,waku);
       setTextInput(document.getElementById("textInput"));
       setMetadataPlayer(obj.metadata);
       setInitialize(true);
@@ -147,13 +144,14 @@ export default function App () {
   },[])
 
 
+
   return (
     <center className="App">
       {
         initialize ?
         <>
         {
-          isConnected && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
+          waku && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
         }
         </> :
         <>
@@ -163,14 +161,14 @@ export default function App () {
         <div>
         <p>Feel free to fork and modify it!</p>
         <p><small>
-          This game is offchain and does not sends transactions to blockchain, it uses <a href="https://doc.fluence.dev/aqua-book/libraries/aqua-dht" target="_blank" rel="noreferrer">Aqua DHT</a>
-          and <a href="https://doc.fluence.dev/docs/quick-start/1.-browser-to-browser-1" target="_blank" rel="noreferrer">Fluence js</a> to allow multiplayer
+          This game is offchain and does not sends transactions to blockchain, it uses
+          <a href="https://docs.wakuconnect.dev/docs/guides/08_reactjs_store/#cra-webpack-rewired" target="_blank" rel="noreferrer">Waku js</a> to allow multiplayer
         </small></p>
         {
-          !isConnected ?
+          !waku ?
           <>
             <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-            <p>Loading Fluence ...</p>
+            <p>Loading Waku js ...</p>
           </> :
           !coinbase ?
           <Row>
@@ -197,7 +195,7 @@ export default function App () {
         </div>
         </Container>
         {
-          loadingMyNFTs && isConnected ?
+          loadingMyNFTs && waku ?
           <center>
             <p>Loading your NFTs ...</p>
           </center> :
@@ -210,7 +208,7 @@ export default function App () {
         <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message" />
       </center>
 
-      <Footer ipfs={isConnected}  />
+      <Footer ipfs={waku}  />
     </center>
   )
 }

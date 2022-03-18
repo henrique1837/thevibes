@@ -22,7 +22,7 @@ export default function Footer (props) {
           <p><small><a href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</a></small></p>
         </Col>
         <Col md={2}>
-          <p><small><a href="https://fluence.network/" target="_blank" rel="noreferrer">Fluence</a></small></p>
+          <p><small><a href="https://wakuconnect.dev/" target="_blank" rel="noreferrer">Waku js</a></small></p>
         </Col>
       </Row>
     </Container>

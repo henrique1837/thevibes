@@ -33,7 +33,7 @@ export default function App () {
     loadWeb3Modal
   } = useWeb3Modal();
 
-  const { ipfs } = useIPFS();
+  const { ipfs,ipfsErr } = useIPFS();
 
   const {
       client,
@@ -219,11 +219,13 @@ export default function App () {
         <p>Feel free to fork and modify it!</p>
         <p><small>This game is offchain and does not sends transactions to blockchain, it uses IPFS pubsub room to allow multiplayer</small></p>
         {
-          !ipfs ?
+          !ipfs  && !ipfsErr ?
           <>
             <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
             <p>Loading ipfs pubsub ...</p>
           </> :
+          ipfsErr ?
+          <div style={{paddingTop: '100px'}}><p>Error while loading IPFS, try again later ...</p></div> :
           !coinbase ?
           <Row>
           <Col lg={6}>

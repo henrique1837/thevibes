@@ -4,7 +4,7 @@ A place where NFTs can play togheter and have fun. Currently playable with NFTs 
 
 Users can also enter as guest (no NFT in wallet / not connected the wallet to the dapp).
 
-Offchain Free to Play (Play for Fun!) game using IPFS pubsub to allow chat messages between players and show positions/movements in the map.
+Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md#ipfspubsubpeerstopic-options) to allow chat messages between players and show positions/movements in the map.
 
 Maps were done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
 
@@ -17,6 +17,16 @@ Still a Proof of Concept:
 - How to prevent cheat in the game ?  
 
 ## Demo
+
+Any of URLs
+
+ - https://ipfs.io/ipns/ipfs.thevibes.space/
+ - https://ipfs-thevibes-space.ipns.dweb.link/
+ - https://gateway.pinata.cloud/ipns/ipfs.thevibes.space/
+ - ipns://ipfs.thevibes.space/
+ - https://ipfs.thevibes.space/
+
+## DemoVideo
 
 
 

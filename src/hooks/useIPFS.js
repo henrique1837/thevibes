@@ -3,6 +3,7 @@ import * as IPFS from 'ipfs';
 function useIpfs() {
 
   const [ipfs,setIpfs] = useState();
+  const [ipfsErr,setIpfsErr] = useState();
 
   useEffect( () => {
 
@@ -58,13 +59,14 @@ function useIpfs() {
       })
       .catch(err => {
         console.log(err)
+        setIpfsErr(true)
       });
 
   },[])
 
 
 
-  return({ipfs})
+  return({ipfs,ipfsErr})
 }
 
 export default useIpfs;

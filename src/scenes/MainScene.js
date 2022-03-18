@@ -100,6 +100,8 @@ class MainScene extends Phaser.Scene {
   }
 
   create = async () => {
+    window.addEventListener('resize', this.resize);
+    this.resize();
     const map = this.make.tilemap({key: 'map'});
     //this.add.image(1000,1020,'background')
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
@@ -152,7 +154,7 @@ class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.friendlyPlayers, waterLayer);
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    //this.waku.relay.addObserver(this.handleMessages,[topicMovements]);
+
     this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
 
 
@@ -177,7 +179,6 @@ class MainScene extends Phaser.Scene {
 
   update = async () => {
 
-    //this.player.setVelocity(0);
     if(this.chat){
       this.chat.x = this.player.body.position.x + 280 ;
       this.chat.y = this.player.body.position.y - 150;
@@ -206,16 +207,14 @@ class MainScene extends Phaser.Scene {
 
     if((this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        !this.msgMovementStarted){
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.ipfs.pubsub.publish(topicMovements, msgSend)
+
       this.msgMovementStarted = true;
       this.sendMessage(topicMovements,msg)
 
     }
     if(!(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        this.msgMovementStarted){
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.ipfs.pubsub.publish(topicMovements, msgSend)
+
       this.msgMovementStarted = false;
       this.sendMessage(topicMovements,msg)
 
@@ -246,6 +245,7 @@ class MainScene extends Phaser.Scene {
         }
         const msgString = JSON.stringify(obj);
         await this.sendMessage(topicMovements, msgString);
+        textInput.value = ""
       }
     })
   }
@@ -350,8 +350,6 @@ class MainScene extends Phaser.Scene {
             metadata: this.metadata,
             type: "message"
           });
-          //const msgSend = new TextEncoder().encode(str)
-          //await this.ipfs.pubsub.publish(topic, msgSend)
           this.sendMessage(topicMovements,str);
         }
       }
@@ -383,8 +381,6 @@ class MainScene extends Phaser.Scene {
         name: player.name,
         type: "collision"
       });
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.ipfs.pubsub.publish(topicMovements, msgSend)
       this.sendMessage(topicMovements,msg);
     }
     player.setVelocity(0,0);
@@ -405,9 +401,6 @@ class MainScene extends Phaser.Scene {
     });
     await this.sendMessage(topicMovements,msg);
 
-    //let msgSend = new TextEncoder().encode(msg)
-    //await this.ipfs.pubsub.publish(topic, msgSend)
-
 
     msg = JSON.stringify({
       metadata: this.metadata,
@@ -419,9 +412,19 @@ class MainScene extends Phaser.Scene {
     });
     await this.sendMessage(topicMovements,msg);
 
+  }
 
-    //msgSend = new TextEncoder().encode(msg)
-    //await this.ipfs.pubsub.publish(topicMovements, msgSend)
+
+  resize = () => {
+    const canvas = this.game.canvas, width = window.innerWidth, height = window.innerHeight;
+    const wratio = width / height, ratio = canvas.width / canvas.height;
+    if (wratio < ratio) {
+        canvas.style.width = width + "px";
+        canvas.style.height = (width / ratio) + "px";
+    } else {
+        canvas.style.width = (height * ratio) + "px";
+        canvas.style.height = height + "px";
+    }
   }
 
 }

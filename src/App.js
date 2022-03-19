@@ -1,5 +1,4 @@
-import React, { useState,useCallback, useEffect,useMemo, useRef } from 'react'
-import Phaser from 'phaser'
+import React, { useState, useEffect,useMemo, useRef } from 'react'
 import { IonPhaser } from '@ion-phaser/react'
 import { Button,Box,Header,Heading,Spinner,Paragraph,Anchor,TextInput } from 'grommet';
 
@@ -17,7 +16,6 @@ import MyNfts from './components/MyNfts';
 
 
 
-const topicMovements = 'hash-avatars/games/first-contact/movements';
 const topic = 'hash-avatars/games/first-contact';
 
 export default function App () {
@@ -29,7 +27,6 @@ export default function App () {
     provider,
     coinbase,
     netId,
-    connecting,
     loadWeb3Modal
   } = useWeb3Modal();
 
@@ -49,45 +46,11 @@ export default function App () {
   const [loadingMyNFTs,setLoadingMyNFTs] = useState(true);
 
   const [metadataPlayer,setMetadataPlayer] = useState();
-  // Call `setInitialize` when you want to initialize your game! :)
   const [initialize, setInitialize] = useState(false);
-  const [msg,setMsg] = useState();
   const [subscribed,setSubscribed] = useState();
-  const [peers,setPeersIds] = useState(0);
   const [connections,setConnectedUsers] = useState(0);
 
-  const destroy = () => {
-    if (gameRef.current) {
-      gameRef.current.destroy()
-    }
-    setInitialize(false)
-  }
-
-  const post =  async (msgEnter) => {
-      const inputMessage = document.getElementById('input_message');
-      let message = msg;
-      if(!msg || msgEnter){
-        message = msgEnter
-      }
-      const msgString = JSON.stringify({
-        message: msg,
-        from: coinbase,
-        timestamp: (new Date()).getTime(),
-        metadata: metadataPlayer,
-        type: "message"
-      });
-      const msgToSend = new TextEncoder().encode(msgString)
-
-      await ipfs.pubsub.publish(topic, msgToSend);
-      inputMessage.value = '';
-      inputMessage.innerText = '';
-      setMsg('');
-
-  };
-
   const setMetadata = (obj) => {
-      console.log(Game)
-      const scene = Game.scene;
       setAttributes(obj.metadata,coinbase,obj.address,ipfs);
       setMetadataPlayer(obj.metadata);
       setTextInput(document.getElementById("textInput"));
@@ -139,7 +102,7 @@ export default function App () {
   useMemo(() => {
     if(!client && coinbase){
       setLoadingMyNFTs(true);
-      const newClient = initiateClient(netId);
+      initiateClient(netId);
     }
   },[client,coinbase,netId]);
   useMemo(async () => {
@@ -147,11 +110,11 @@ export default function App () {
       try{
         const ownedNfts = await getNftsFrom(coinbase);
         const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
-        const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
         let promises = erc721Tokens.map(getMetadata);
         const newMyOwnedNfts = await Promise.all(promises)
         setMyOwnedNfts(newMyOwnedNfts);
 
+        const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
         promises = erc1155Tokens.map(getMetadata);
         const newMyOwnedERC1155 = await Promise.all(promises)
         setMyOwnedERC1155(newMyOwnedERC1155);
@@ -173,10 +136,6 @@ export default function App () {
         newMsgs.unshift(obj);
         setMsgs(newMsgs);
       });
-      setInterval(async () => {
-        const newPeerIds = await ipfs.pubsub.peers(topicMovements);
-        setPeersIds(newPeerIds);
-      },5000);
 
       setInterval(async () => {
         const newPeerIds = await ipfs.pubsub.peers(topic);
@@ -213,22 +172,21 @@ export default function App () {
         </> :
         <>
         <Header background="brand" align="start">
-          <Heading margin="small">The Vibes</Heading>
+          <Heading margin="small">The Vibes Beta</Heading>
         </Header>
         <Heading level="2">Play for Fun</Heading>
         <Box align="center" pad="small">
           <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
-          <Paragraph>Feel free to fork and modify it!</Paragraph>
+          <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
           <Paragraph size="small">
             This game is offchain and does not sends transactions to blockchain, it uses{' '}
             <Anchor
               target="_blank"
               href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
-              label="IPFS pubsub room"
+              label="IPFS pubsub"
             />{' '}
             to allow multiplayer
           </Paragraph>
-
         </Box>
         <Box align="center" pad="medium" alignContent="center">
         {
@@ -253,7 +211,7 @@ export default function App () {
           }} label="Enter as Guest" />
           </Box> :
           <>
-          <Paragraph>Connected as {coinbase}</Paragraph>
+          <Paragraph style={{wordBreak: 'break-word'}}>Connected as {coinbase}</Paragraph>
           </>
         }
         {
@@ -271,7 +229,7 @@ export default function App () {
             </>:
             ipfs &&
             <>
-              <Paragraph>Could not load your NFTs, try changing network or enter as guest</Paragraph>
+              <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
               <Button primary onClick={() => {
                 setMetadata({
                   metadata: {

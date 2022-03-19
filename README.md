@@ -4,29 +4,65 @@ A place where NFTs can play togheter and have fun. Currently playable with NFTs 
 
 Users can also enter as guest (no NFT in wallet / not connected the wallet to the dapp).
 
-Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md#ipfspubsubpeerstopic-options) to allow chat messages between players and show positions/movements in the map.
+Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md) to allow chat messages between players and show positions/movements in the game.
 
-Maps were done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
+Map was done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
 
-NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155 (and others networks).  
+NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155 (and others networks except Ethereum mainnet, which used https://thegraph.com/hosted-service/subgraph/ryry79261/mainnet-erc721-erc1155).  
 
 Still a Proof of Concept:
 
-- Is it possible to make a multiplayer game using IPFS pubsub (or frameworks that were constructed on top of IPFS)?  
+- Is it possible to make a multiplayer game using IPFS pubsub (or frameworks that were constructed on top of IPFS) ?  
 - What are the issues ?
-- How to prevent cheat in the game ?  
+- How to prevent cheat in the game ?
+- Should the game get the actual map to be used from a smart contract controled by a DAO ?
+- How to allow users play with their own created maps ?
 
 ## Demo
 
 Any of URLs
 
- - https://ipfs.io/ipns/ipfs.thevibes.space/
- - https://ipfs-thevibes-space.ipns.dweb.link/
- - https://gateway.pinata.cloud/ipns/ipfs.thevibes.space/
- - ipns://ipfs.thevibes.space/
- - https://ipfs.thevibes.space/
+ - https://thevibes-space.ipns.dweb.link/
+ - https://gateway.pinata.cloud/ipns/thevibes.space/
+ - https://ipfs.io/ipns/thevibes.space/
+ - ipns://thevibes.space/
+ - https://thevibes.space/
 
-## DemoVideo
+## Demo Video
+
+  https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/
+
+  <video src="https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/" width="100%" ></video>
+
+## Testing Guide
+
+### As Guest
+
+  This option can be used by users that does not have NFTs or wallet.
+
+ - Enter the dapp, wait for IPFS load and click "Enter as Guest" button;
+
+ ![Main](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/main.png "Main")
+
+ - Move using arrows keys
+
+ ![Guest](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/guest.png "Guest")
+
+
+### Using NFT
+
+  - Connect wallet in the dapp and wait NFTs load (Currently playable with NFTs from  Rinkeby, Ethereum, BSC, Avalanche, XDAI, Polygon but some subgraphs may not be 100% synced with the blockchain)
+
+  - Select your NFT
+
+  ![Select NFT](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/connected.png "Select NFT")
+
+
+  - Move using arrows keys, touch the top of others to kill them, NFTs from same contract address or guests cant kill each other .
+
+  ![NFT](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/nftUse.png "NFT")
+
+  ![Guest Died](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/guestDied.png "Guest Died")
 
 
 

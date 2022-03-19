@@ -2,7 +2,6 @@ import Phaser from 'phaser'
 
 
 const topicMovements = 'hash-avatars/games/first-contact/movements';
-const topic = 'hash-avatars/games/first-contact';
 
 let metadata;
 let coinbaseGame;
@@ -27,6 +26,7 @@ class MainScene extends Phaser.Scene {
     this.contractAddress = contractAddress;
     this.coinbaseGame = coinbaseGame;
     this.ipfs = ipfs;
+    this.totalPlayers = 1;
     this.chatMessages = [];
   }
 
@@ -156,7 +156,15 @@ class MainScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
 
     this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
+    setInterval(async () => {
+      const newPeerIds = await this.ipfs.pubsub.peers(topicMovements);
+      if(this.totalPlayers - 1 !== newPeerIds.length){
+        this.totalPlayers = newPeerIds.length + 1;
+        this.totalPlayersCounter.destroy();
+        this.totalPlayersCounter = this.add.text(this.player.x + 280, this.player.y - 200,`Total of ${this.totalPlayers} players online`, { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
 
+      }
+    },5000);
 
 
     this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
@@ -182,6 +190,10 @@ class MainScene extends Phaser.Scene {
     if(this.chat){
       this.chat.x = this.player.body.position.x + 280 ;
       this.chat.y = this.player.body.position.y - 150;
+    }
+    if(this.totalPlayersCounter){
+      this.totalPlayersCounter.x = this.player.body.position.x + 280 ;
+      this.totalPlayersCounter.y = this.player.body.position.y - 200;
     }
 
     if (this.cursors.left.isDown){
@@ -229,13 +241,14 @@ class MainScene extends Phaser.Scene {
   }
 
   prepareChat = () => {
+    this.totalPlayersCounter = this.add.text(this.player.x + 280, this.player.y - 200,`Total of ${this.totalPlayers} players online`, { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
 
     this.chat = this.add.text(this.player.x + 280, this.player.y - 150, "", { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
     this.chat.setFixedSize(400, 300);
 
     this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.enterKey.on("down", async event => {
-      if (textInput.value != "") {
+      if (textInput.value !== "") {
         const obj = {
           message: textInput.value,
           from: coinbaseGame,
@@ -248,20 +261,6 @@ class MainScene extends Phaser.Scene {
         textInput.value = ""
       }
     })
-  }
-  handleLastMessages = (retrievedMessages) => {
-    const articles = retrievedMessages
-    const handleMessages = this.handleMessages;
-    console.log(articles)
-    articles.map(wakuMessage => {
-      try{
-        console.log(`Message Stored Received: ${wakuMessage.payloadAsUtf8}`);
-        handleMessages(wakuMessage.payloadAsUtf8);
-      } catch(err){
-        console.log(err)
-      }
-    });
-
   }
   handleMessages = (msg) => {
     try{
@@ -282,7 +281,7 @@ class MainScene extends Phaser.Scene {
           if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
             console.log(obj.velocity)
             otherPlayer.setVelocity(obj.velocity.x,obj.velocity.y);
-            if(obj.velocity.x == 0 && obj.velocity.y === 0 ){
+            if(obj.velocity.x === 0 && obj.velocity.y === 0 ){
               otherPlayer.setPosition(obj.player.x,obj.player.y)
             }
 
@@ -326,15 +325,6 @@ class MainScene extends Phaser.Scene {
             velocity: this.player.body.velocity,
             from: this.coinbaseGame,
             type: "movement"
-          });
-          this.sendMessage(topicMovements,msgSend);
-
-          msgSend = JSON.stringify({
-            message: `I am connected!`,
-            from: this.coinbaseGame,
-            timestamp: (new Date()).getTime(),
-            metadata: this.metadata,
-            type: "message"
           });
           this.sendMessage(topicMovements,msgSend);
 

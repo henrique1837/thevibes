@@ -1,7 +1,7 @@
 import React, { useState,useCallback, useEffect,useMemo, useRef } from 'react'
 import Phaser from 'phaser'
 import { IonPhaser } from '@ion-phaser/react'
-import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
+import { Button,Box,Header,Heading,Spinner,Paragraph,Anchor,TextInput } from 'grommet';
 
 
 
@@ -12,7 +12,7 @@ import useIPFS from './hooks/useIPFS';
 import Game from './Game';
 import {setAttributes,setTextInput} from './scenes/MainScene';
 
-import Footer from './components/Footer';
+import FooterComponent from './components/Footer';
 import MyNfts from './components/MyNfts';
 
 
@@ -203,7 +203,7 @@ export default function App () {
   },[])
 
   return (
-    <center className="App">
+    <center>
       {
         initialize ?
         <>
@@ -212,76 +212,93 @@ export default function App () {
         }
         </> :
         <>
-        <Container>
-        <h1>Play for Fun</h1>
-        <p>No matter how valuable is your NFT or where it is deployed, here we all have same value!</p>
-        <div>
-        <p>Feel free to fork and modify it!</p>
-        <p><small>This game is offchain and does not sends transactions to blockchain, it uses IPFS pubsub room to allow multiplayer</small></p>
+        <Header background="brand" align="start">
+          <Heading margin="small">The Vibes</Heading>
+        </Header>
+        <Heading level="2">Play for Fun</Heading>
+        <Box align="center" pad="small">
+          <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
+          <Paragraph>Feel free to fork and modify it!</Paragraph>
+          <Paragraph size="small">
+            This game is offchain and does not sends transactions to blockchain, it uses{' '}
+            <Anchor
+              target="_blank"
+              href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
+              label="IPFS pubsub room"
+            />{' '}
+            to allow multiplayer
+          </Paragraph>
+
+        </Box>
+        <Box align="center" pad="medium" alignContent="center">
         {
           !ipfs  && !ipfsErr ?
           <>
-            <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-            <p>Loading ipfs pubsub ...</p>
+            <Spinner />
+            <Paragraph>Loading ipfs pubsub ...</Paragraph>
           </> :
           ipfsErr ?
-          <div style={{paddingTop: '100px'}}><p>Error while loading IPFS, try again later ...</p></div> :
+          <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
           !coinbase ?
-          <Row>
-          <Col lg={6}>
-            <button onClick={loadWeb3Modal}>Connect Wallet</button>
-          </Col>
-          <Col lg={6}>
-            <button onClick={() => {
-              setMetadata({
-                metadata: {
-                  name: `Guest-${Math.random()}`,
-                  image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
-                },
-                address: '0x000'
-              })
-            }}>Enter as Guest</button>
-          </Col>
-          </Row> :
+          <Box direction="row" alignContent="center" pad="large">
+          <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+          <Button primary onClick={() => {
+            setMetadata({
+              metadata: {
+                name: `Guest-${Math.random()}`,
+                image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+              },
+              address: '0x000'
+            })
+          }} label="Enter as Guest" />
+          </Box> :
           <>
-          <p>Connected as {coinbase}</p>
-          <h4>Select a NFT</h4>
+          <Paragraph>Connected as {coinbase}</Paragraph>
           </>
         }
-        </div>
-        </Container>
-
         {
 
           loadingMyNFTs && ipfs ?
-          <center>
-            <p>Loading your NFTs ...</p>
-          </center> :
-          !graphErr ?
-          <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} /> :
-          ipfs &&
-          <center>
-            <p>Could not load your NFTs, try changing network or enter as guest</p>
-            <button onClick={() => {
-              setMetadata({
-                metadata: {
-                  name: `Guest-${Math.random()}`,
-                  image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
-                },
-                address: '0x000'
-              })
-            }}>Enter as Guest</button>
-          </center>
+          <>
+            <Spinner />
+            <Paragraph>Loading your NFTs ...</Paragraph>
+          </>  :
+          coinbase &&
+          (
+            !graphErr && ipfs ?
+            <>
+            <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
+            </>:
+            ipfs &&
+            <>
+              <Paragraph>Could not load your NFTs, try changing network or enter as guest</Paragraph>
+              <Button primary onClick={() => {
+                setMetadata({
+                  metadata: {
+                    name: `Guest-${Math.random()}`,
+                    image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+                  },
+                  address: '0x000'
+                })
+              }} label="Enter as Guest"/>
+            </>
+          )
 
         }
+        </Box>
         </>
       }
 
-      <center>
-        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message" />
-      </center>
+      <Box padding="xlarge">
+        <TextInput
+          type="text"
+          id="textInput"
+          hidden={!initialize}
+          placeholder="Enter a message and press enter to send ..."
+        />
+      </Box>
 
-      <Footer ipfs={ipfs} connections={connections}  />
+      <FooterComponent ipfs={ipfs} connections={connections}  />
 
     </center>
   )

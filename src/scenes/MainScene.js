@@ -393,7 +393,7 @@ class MainScene extends Phaser.Scene {
 
   sendMessagePlayerEntered = async () => {
     let msg = JSON.stringify({
-      message: `${this.metadata.name} joined`,
+      message: `Connected`,
       from: this.coinbaseGame,
       timestamp: (new Date()).getTime(),
       metadata: this.metadata,

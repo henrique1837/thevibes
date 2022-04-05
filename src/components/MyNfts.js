@@ -11,7 +11,6 @@ import {
   CardFooter
  } from 'grommet';
 
-
 export default function MyNfts (props) {
   return(
     <>

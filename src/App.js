@@ -7,14 +7,12 @@ import { Button,Box,Header,Heading,Spinner,Paragraph,Anchor,TextInput } from 'gr
 
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
-import useIPFS from './hooks/useIPFS';
+import useWaku from './hooks/useWaku';
 import Game from './Game';
 import {setAttributes,setTextInput} from './scenes/MainScene';
 
 import FooterComponent from './components/Footer';
 import MyNfts from './components/MyNfts';
-
-
 
 const topic = 'hash-avatars/games/first-contact';
 
@@ -39,7 +37,6 @@ export default function App () {
   } = useClient();
 
 
-  const [msgs,setMsgs] = useState([]);
   const [myOwnedNfts,setMyOwnedNfts] = useState();
   const [myOwnedERC1155,setMyOwnedERC1155] = useState();
 
@@ -127,6 +124,7 @@ export default function App () {
       }
     }
   },[client,coinbase,myOwnedNfts]);
+
   useMemo(async () => {
     if(ipfs && !subscribed){
       await ipfs.pubsub.subscribe(topic, async (msg) => {
@@ -148,6 +146,7 @@ export default function App () {
 
   },[ipfs,msgs,subscribed]);
 
+
   useEffect(()=>{
     window.addEventListener('keydown', async event => {
       const inputMessage = document.getElementById('textInput');
@@ -167,7 +166,7 @@ export default function App () {
         initialize ?
         <>
         {
-          ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
+          waku && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
         }
         </> :
         <>
@@ -257,7 +256,6 @@ export default function App () {
       </Box>
 
       <FooterComponent ipfs={ipfs} connections={connections}  />
-
     </center>
   )
 }

@@ -3,12 +3,12 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Grommet } from 'grommet';
 
 ReactDOM.render(
-  <React.StrictMode>
+  <Grommet>
     <App />
-  </React.StrictMode>,
+  </Grommet>,
   document.getElementById('root')
 );
 

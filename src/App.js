@@ -1,7 +1,8 @@
-import React, { useState,useCallback, useEffect,useMemo, useRef } from 'react'
-import Phaser from 'phaser'
+import React, { useState, useEffect,useMemo, useRef } from 'react'
 import { IonPhaser } from '@ion-phaser/react'
-import { Container,Row,Col,Image,Spinner } from 'react-bootstrap';
+import { Button,Box,Header,Heading,Spinner,Paragraph,Anchor,TextInput } from 'grommet';
+
+
 
 
 import useWeb3Modal from './hooks/useWeb3Modal';
@@ -9,25 +10,25 @@ import useClient from './hooks/useGraphClient';
 import useWaku from './hooks/useWaku';
 import Game from './Game';
 import {setAttributes,setTextInput} from './scenes/MainScene';
-import Footer from './components/Footer';
-import MyNfts from './components/MyNfts'
 
+import FooterComponent from './components/Footer';
+import MyNfts from './components/MyNfts';
+
+const topic = 'hash-avatars/games/first-contact';
 
 export default function App () {
 
+  const [graphErr,setGraphErr] = useState();
 
   const gameRef = useRef(null);
   const {
     provider,
     coinbase,
     netId,
-    connecting,
     loadWeb3Modal
   } = useWeb3Modal();
 
-  const {
-    waku
-  } = useWaku();
+  const { ipfs,ipfsErr } = useIPFS();
 
   const {
       client,
@@ -42,26 +43,14 @@ export default function App () {
   const [loadingMyNFTs,setLoadingMyNFTs] = useState(true);
 
   const [metadataPlayer,setMetadataPlayer] = useState();
-  // Call `setInitialize` when you want to initialize your game! :)
   const [initialize, setInitialize] = useState(false);
   const [subscribed,setSubscribed] = useState();
-  const [peers,setPeersIds] = useState(0);
   const [connections,setConnectedUsers] = useState(0);
 
-  const destroy = () => {
-    if (gameRef.current) {
-      gameRef.current.destroy()
-    }
-    setInitialize(false)
-  }
-
-
   const setMetadata = (obj) => {
-      console.log(Game)
-      const scene = Game.scene;
-      setAttributes(obj.metadata,coinbase,obj.address,waku);
-      setTextInput(document.getElementById("textInput"));
+      setAttributes(obj.metadata,coinbase,obj.address,ipfs);
       setMetadataPlayer(obj.metadata);
+      setTextInput(document.getElementById("textInput"));
       setInitialize(true);
   }
 
@@ -110,25 +99,53 @@ export default function App () {
   useMemo(() => {
     if(!client && coinbase){
       setLoadingMyNFTs(true);
-      const newClient = initiateClient(netId);
+      initiateClient(netId);
     }
   },[client,coinbase,netId]);
   useMemo(async () => {
     if(client && coinbase && !myOwnedNfts){
-      const ownedNfts = await getNftsFrom(coinbase);
-      const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
-      const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
-      let promises = erc721Tokens.map(getMetadata);
-      const newMyOwnedNfts = await Promise.all(promises)
-      setMyOwnedNfts(newMyOwnedNfts);
+      try{
+        const ownedNfts = await getNftsFrom(coinbase);
+        const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
+        let promises = erc721Tokens.map(getMetadata);
+        const newMyOwnedNfts = await Promise.all(promises)
+        setMyOwnedNfts(newMyOwnedNfts);
 
-      promises = erc1155Tokens.map(getMetadata);
-      const newMyOwnedERC1155 = await Promise.all(promises)
-      setMyOwnedERC1155(newMyOwnedERC1155);
+        const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
+        promises = erc1155Tokens.map(getMetadata);
+        const newMyOwnedERC1155 = await Promise.all(promises)
+        setMyOwnedERC1155(newMyOwnedERC1155);
 
-      setLoadingMyNFTs(false);
+        setLoadingMyNFTs(false);
+      } catch(err){
+        console.log(err)
+        setGraphErr(true)
+        setLoadingMyNFTs(false);
+      }
     }
   },[client,coinbase,myOwnedNfts]);
+
+  useMemo(async () => {
+    if(ipfs && !subscribed){
+      await ipfs.pubsub.subscribe(topic, async (msg) => {
+        console.log(new TextDecoder().decode(msg.data));
+        const obj = JSON.parse(new TextDecoder().decode(msg.data));
+        const newMsgs = msgs;
+        newMsgs.unshift(obj);
+        setMsgs(newMsgs);
+      });
+
+      setInterval(async () => {
+        const newPeerIds = await ipfs.pubsub.peers(topic);
+        setConnectedUsers(newPeerIds.length);
+      },5000);
+
+      setSubscribed(true);
+
+    }
+
+  },[ipfs,msgs,subscribed]);
+
 
   useEffect(()=>{
     window.addEventListener('keydown', async event => {
@@ -143,10 +160,8 @@ export default function App () {
 
   },[])
 
-
-
   return (
-    <center className="App">
+    <center>
       {
         initialize ?
         <>
@@ -155,60 +170,92 @@ export default function App () {
         }
         </> :
         <>
-        <Container>
-        <h1>Play for Fun</h1>
-        <p>No matter how valuable is your NFT or where it is deployed, here we all have same value!</p>
-        <div>
-        <p>Feel free to fork and modify it!</p>
-        <p><small>
-          This game is offchain and does not sends transactions to blockchain, it uses
-          <a href="https://docs.wakuconnect.dev/docs/guides/08_reactjs_store/#cra-webpack-rewired" target="_blank" rel="noreferrer">Waku js</a> to allow multiplayer
-        </small></p>
+        <Header background="brand" align="start">
+          <Heading margin="small">The Vibes Beta</Heading>
+        </Header>
+        <Heading level="2">Play for Fun</Heading>
+        <Box align="center" pad="small">
+          <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
+          <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
+          <Paragraph size="small">
+            This game is offchain and does not sends transactions to blockchain, it uses{' '}
+            <Anchor
+              target="_blank"
+              href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
+              label="IPFS pubsub"
+            />{' '}
+            to allow multiplayer
+          </Paragraph>
+        </Box>
+        <Box align="center" pad="medium" alignContent="center">
         {
-          !waku ?
+          !ipfs  && !ipfsErr ?
           <>
-            <div style={{paddingTop: '100px'}}><Spinner animation="border" /></div>
-            <p>Loading Waku js ...</p>
+            <Spinner />
+            <Paragraph>Loading ipfs pubsub ...</Paragraph>
           </> :
+          ipfsErr ?
+          <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
           !coinbase ?
-          <Row>
-          <Col lg={6}>
-            <button onClick={loadWeb3Modal}>Connect Wallet</button>
-          </Col>
-          <Col lg={6}>
-            <button onClick={() => {
-              setMetadata({
-                metadata: {
-                  name: `Guest-${Math.random()}`,
-                  image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
-                },
-                address: '0x000'
-              })
-            }}>Enter as Guest</button>
-          </Col>
-          </Row> :
+          <Box direction="row" alignContent="center" pad="large">
+          <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+          <Button primary onClick={() => {
+            setMetadata({
+              metadata: {
+                name: `Guest-${Math.random()}`,
+                image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+              },
+              address: '0x000'
+            })
+          }} label="Enter as Guest" />
+          </Box> :
           <>
-          <p>Connected as {coinbase}</p>
-          <h4>Select a NFT</h4>
+          <Paragraph style={{wordBreak: 'break-word'}}>Connected as {coinbase}</Paragraph>
           </>
         }
-        </div>
-        </Container>
         {
-          loadingMyNFTs && waku ?
-          <center>
-            <p>Loading your NFTs ...</p>
-          </center> :
-          <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
+
+          loadingMyNFTs && ipfs ?
+          <>
+            <Spinner />
+            <Paragraph>Loading your NFTs ...</Paragraph>
+          </>  :
+          coinbase &&
+          (
+            !graphErr && ipfs ?
+            <>
+            <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
+            </>:
+            ipfs &&
+            <>
+              <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
+              <Button primary onClick={() => {
+                setMetadata({
+                  metadata: {
+                    name: `Guest-${Math.random()}`,
+                    image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+                  },
+                  address: '0x000'
+                })
+              }} label="Enter as Guest"/>
+            </>
+          )
+
         }
+        </Box>
         </>
       }
 
-      <center>
-        <input type="text" id="textInput" hidden={!initialize} placeholder="Enter a message" />
-      </center>
+      <Box padding="xlarge">
+        <TextInput
+          type="text"
+          id="textInput"
+          hidden={!initialize}
+          placeholder="Enter a message and press enter to send ..."
+        />
+      </Box>
 
-      <Footer ipfs={waku}  />
+      <FooterComponent ipfs={ipfs} connections={connections}  />
     </center>
   )
 }

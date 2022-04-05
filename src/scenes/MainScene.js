@@ -1,23 +1,17 @@
 import Phaser from 'phaser'
 import { Waku,WakuMessage } from 'js-waku';
 
-const topicMovements = 'hash-avatars/gamesv1/first-contact/movements/proto';
-const topic = 'hash-avatars/games/first-contact';
-const serviceId = "TheVibesTestDapp"
-
+const topicMovements = 'hash-avatars/games/first-contact/movements';
 let metadata;
 let coinbaseGame;
 let contractAddress;
-let room;
-let waku;
+let ipfs;
 let textInput;
-
-
-export const setAttributes = (mt,cG,cA,r,tI) => {
+export const setAttributes = (mt,cG,cA,r) => {
   metadata = mt
   coinbaseGame = cG;
   contractAddress = cA;
-  waku = r;
+  ipfs = r
 }
 
 export const setTextInput = (tI) => {
@@ -30,8 +24,8 @@ class MainScene extends Phaser.Scene {
     this.metadata = metadata;
     this.contractAddress = contractAddress;
     this.coinbaseGame = coinbaseGame;
-    this.room = room;
-    this.waku = waku;
+    this.ipfs = ipfs;
+    this.totalPlayers = 1;
     this.chatMessages = [];
   }
 
@@ -105,6 +99,8 @@ class MainScene extends Phaser.Scene {
   }
 
   create = async () => {
+    window.addEventListener('resize', this.resize);
+    this.resize();
     const map = this.make.tilemap({key: 'map'});
     //this.add.image(1000,1020,'background')
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
@@ -157,9 +153,16 @@ class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.friendlyPlayers, waterLayer);
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.waku.relay.addObserver(this.handleMessages,[topicMovements]);
-    //this.room.pubsub.subscribe(topicMovements,this.handleMessages);
+    this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
+    setInterval(async () => {
+      const newPeerIds = await this.ipfs.pubsub.peers(topicMovements);
+      if(this.totalPlayers - 1 !== newPeerIds.length){
+        this.totalPlayers = newPeerIds.length + 1;
+        this.totalPlayersCounter.destroy();
+        this.totalPlayersCounter = this.add.text(this.player.x + 280, this.player.y - 200,`Total of ${this.totalPlayers} players online`, { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
 
+      }
+    },5000);
 
 
     this.physics.add.collider(this.player,this.friendlyPlayers,(player,friend) => {
@@ -182,10 +185,13 @@ class MainScene extends Phaser.Scene {
 
   update = async () => {
 
-    //this.player.setVelocity(0);
     if(this.chat){
       this.chat.x = this.player.body.position.x + 280 ;
       this.chat.y = this.player.body.position.y - 150;
+    }
+    if(this.totalPlayersCounter){
+      this.totalPlayersCounter.x = this.player.body.position.x + 280 ;
+      this.totalPlayersCounter.y = this.player.body.position.y - 200;
     }
 
     if (this.cursors.left.isDown){
@@ -211,16 +217,13 @@ class MainScene extends Phaser.Scene {
 
     if((this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        !this.msgMovementStarted){
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.room.pubsub.publish(topicMovements, msgSend)
       this.msgMovementStarted = true;
       this.sendMessage(topicMovements,msg)
 
     }
     if(!(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        this.msgMovementStarted){
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.room.pubsub.publish(topicMovements, msgSend)
+      
       this.msgMovementStarted = false;
       this.sendMessage(topicMovements,msg)
 
@@ -229,21 +232,18 @@ class MainScene extends Phaser.Scene {
   }
 
   sendMessage = async (topic,msg) => {
-    const wakuMessage = await WakuMessage.fromUtf8String(
-      msg,
-      topic
-    );
-    await this.waku.relay.send(wakuMessage);
+    const msgSend = new TextEncoder().encode(msg)
+    await this.ipfs.pubsub.publish(topic, msgSend)
   }
 
   prepareChat = () => {
-
+    this.totalPlayersCounter = this.add.text(this.player.x + 280, this.player.y - 200,`Total of ${this.totalPlayers} players online`, { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
     this.chat = this.add.text(this.player.x + 280, this.player.y - 150, "", { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
     this.chat.setFixedSize(400, 300);
 
     this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.enterKey.on("down", async event => {
-      if (textInput.value != "") {
+      if (textInput.value !== "") {
         const obj = {
           message: textInput.value,
           from: coinbaseGame,
@@ -253,34 +253,13 @@ class MainScene extends Phaser.Scene {
         }
         const msgString = JSON.stringify(obj);
         await this.sendMessage(topicMovements, msgString);
-        this.chatMessages.push(`${metadata.name}: ${textInput.value}`);
-        if(this.chatMessages.length > 11) {
-            this.chatMessages.shift();
-        }
-        this.chat.setText(this.chatMessages);
-        textInput.value = "";
+        textInput.value = ""
       }
     })
   }
-  handleLastMessages = (retrievedMessages) => {
-    const articles = retrievedMessages
-    const handleMessages = this.handleMessages;
-    console.log(articles)
-    articles.map(wakuMessage => {
-      try{
-        console.log(`Message Stored Received: ${wakuMessage.payloadAsUtf8}`);
-        handleMessages(wakuMessage.payloadAsUtf8);
-      } catch(err){
-        console.log(err)
-      }
-    });
-
-  }
   handleMessages = (msg) => {
     try{
-      //const obj = JSON.parse(new TextDecoder().decode(msg.data));
-      console.log(msg)
-      const obj = JSON.parse(msg.payloadAsUtf8);
+      const obj = JSON.parse(new TextDecoder().decode(msg.data));
       if(obj.type === "movement" && obj.metadata.name !== metadata.name){
         console.log("Movement from "+obj.metadata.name);
         let added = false;
@@ -296,7 +275,7 @@ class MainScene extends Phaser.Scene {
           if (obj.metadata.name === otherPlayer.name && obj.contractAddress === contractAddress) {
             console.log(obj.velocity)
             otherPlayer.setVelocity(obj.velocity.x,obj.velocity.y);
-            if(obj.velocity.x == 0 && obj.velocity.y === 0 ){
+            if(obj.velocity.x === 0 && obj.velocity.y === 0 ){
               otherPlayer.setPosition(obj.player.x,obj.player.y)
             }
 
@@ -333,7 +312,7 @@ class MainScene extends Phaser.Scene {
           } else {
             this.friendlyPlayers.add(otherPlayer);
           }
-          const msgSend = JSON.stringify({
+          let msgSend = JSON.stringify({
             metadata: this.metadata,
             contractAddress: this.contractAddress,
             player: this.player,
@@ -355,10 +334,10 @@ class MainScene extends Phaser.Scene {
             metadata: this.metadata,
             type: "message"
           });
-          //const msgSend = new TextEncoder().encode(str)
-          //await this.room.pubsub.publish(topic, msgSend)
           this.sendMessage(topicMovements,str);
         }
+        this.chat.setText(this.chatMessages);
+
       }
 
       if(obj.type === "message"){
@@ -369,7 +348,6 @@ class MainScene extends Phaser.Scene {
         this.chat.setText(this.chatMessages);
 
       }
-
     } catch(err){
       console.log(err)
     }
@@ -388,8 +366,6 @@ class MainScene extends Phaser.Scene {
         name: player.name,
         type: "collision"
       });
-      //const msgSend = new TextEncoder().encode(msg)
-      //await this.room.pubsub.publish(topicMovements, msgSend)
       this.sendMessage(topicMovements,msg);
     }
     player.setVelocity(0,0);
@@ -402,23 +378,13 @@ class MainScene extends Phaser.Scene {
 
   sendMessagePlayerEntered = async () => {
     let msg = JSON.stringify({
-      message: `${this.metadata.name} joined`,
+      message: `Connected`,
       from: this.coinbaseGame,
       timestamp: (new Date()).getTime(),
       metadata: this.metadata,
       type: "message"
     });
     await this.sendMessage(topicMovements,msg);
-    this.chatMessages.push(`${this.metadata.name}: ${this.metadata.name}`);
-    if(this.chatMessages.length > 11) {
-        this.chatMessages.shift();
-    }
-    this.chat.setText(this.chatMessages);
-
-    //let msgSend = new TextEncoder().encode(msg)
-    //await this.room.pubsub.publish(topic, msgSend)
-
-
     msg = JSON.stringify({
       metadata: this.metadata,
       contractAddress: this.contractAddress,
@@ -428,13 +394,23 @@ class MainScene extends Phaser.Scene {
       type: "movement"
     });
     await this.sendMessage(topicMovements,msg);
+  }
 
 
-    //msgSend = new TextEncoder().encode(msg)
-    //await this.room.pubsub.publish(topicMovements, msgSend)
+  resize = () => {
+    const canvas = this.game.canvas, width = window.innerWidth, height = window.innerHeight;
+    const wratio = width / height, ratio = canvas.width / canvas.height;
+    if (wratio < ratio) {
+        canvas.style.width = width + "px";
+        canvas.style.height = (width / ratio) + "px";
+    } else {
+        canvas.style.width = (height * ratio) + "px";
+        canvas.style.height = height + "px";
+    }
   }
 
 }
+
 
 
 export default MainScene

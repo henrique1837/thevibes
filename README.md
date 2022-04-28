@@ -32,7 +32,6 @@ Any of URLs
 
   https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/
 
-  <video src="https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/" width="100%" ></video>
 
 ## Testing Guide
 

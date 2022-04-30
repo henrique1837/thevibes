@@ -6,7 +6,7 @@ import { ApolloClient, InMemoryCache,gql } from '@apollo/client';
 
 const APIURL_XDAI = "https://api.thegraph.com/subgraphs/name/leon-do/xdai-erc721-erc1155";
 const APIURL_ETH = "https://api.thegraph.com/subgraphs/name/ryry79261/mainnet-erc721-erc1155";
-const APIURL_POLYGON = "https://api.thegraph.com/subgraphs/name/leon-do/polygon-erc721-erc1155";
+const APIURL_POLYGON = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic";
 const APIURL_BSC = "https://api.thegraph.com/subgraphs/name/leon-do/bsc-erc721-erc1155";
 const APIURL_AVALANCHE = "https://api.thegraph.com/subgraphs/name/leon-do/avalanche-erc721-erc1155";
 const APIURL_RINKEBY = "https://api.thegraph.com/subgraphs/name/leon-do/rinkeby-erc721-erc1155";
@@ -55,8 +55,8 @@ function useGraphClient() {
      setClient(newClient);
    //}
  }
-  const getNftsFrom = async (address) => {
-   const tokensQuery = `
+  const getNftsFrom = async (address,netId) => {
+   let tokensQuery = `
       query {
         accounts(where: {id: "${address.toLowerCase()}"}) {
           id
@@ -75,6 +75,20 @@ function useGraphClient() {
         }
       }
    `;
+   // No Support for ERC1155 polygon yet
+   if(netId === 137){
+     tokensQuery = `
+        query {
+          accounts(where: {id: "${address.toLowerCase()}"}) {
+            id
+            ERC721tokens {
+              id,
+              uri
+            }
+          }
+        }
+     `;
+   }
    const results = await client.query({
      query: gql(tokensQuery)
    });

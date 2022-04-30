@@ -111,18 +111,23 @@ export default function App () {
     }
   },[client,coinbase,netId]);
   useMemo(async () => {
-    if(client && coinbase && !myOwnedNfts){
+    if(client && coinbase && !myOwnedNfts && netId){
       try{
-        const ownedNfts = await getNftsFrom(coinbase);
-        const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
-        let promises = erc721Tokens.map(getMetadata);
-        const newMyOwnedNfts = await Promise.all(promises)
-        setMyOwnedNfts(newMyOwnedNfts);
+        const ownedNfts = await getNftsFrom(coinbase,netId);
+        let promises;
+        if(ownedNfts.data.accounts[0].ERC721tokens){
+          const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
+          promises = erc721Tokens.map(getMetadata);
+          const newMyOwnedNfts = await Promise.all(promises)
+          setMyOwnedNfts(newMyOwnedNfts);
+        }
 
-        const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
-        promises = erc1155Tokens.map(getMetadata);
-        const newMyOwnedERC1155 = await Promise.all(promises)
-        setMyOwnedERC1155(newMyOwnedERC1155);
+        if(ownedNfts.data.accounts[0].ERC1155balances){
+          const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
+          promises = erc1155Tokens.map(getMetadata);
+          const newMyOwnedERC1155 = await Promise.all(promises)
+          setMyOwnedERC1155(newMyOwnedERC1155);
+        }
 
         setLoadingMyNFTs(false);
       } catch(err){
@@ -131,7 +136,7 @@ export default function App () {
         setLoadingMyNFTs(false);
       }
     }
-  },[client,coinbase,myOwnedNfts]);
+  },[client,coinbase,myOwnedNfts,netId]);
   useMemo(async () => {
     if(ipfs && !subscribed){
       await ipfs.pubsub.subscribe(topic, async (msg) => {

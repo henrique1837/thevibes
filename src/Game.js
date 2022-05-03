@@ -20,10 +20,7 @@ const Game = {
       debug: false
     }
   },
-  dom: {
-      createContainer: true
-  },
-  scene: MainScene
+  scene: MainScene,
 };
 
 export default Game

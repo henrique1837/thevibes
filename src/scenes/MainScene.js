@@ -1,17 +1,35 @@
 import Phaser from 'phaser'
-import { Waku,WakuMessage } from 'js-waku';
 
-const topicMovements = 'hash-avatars/games/first-contact/movements';
+
+let topicMovements = 'hash-avatars/games/first-contact/movements';
+
 let metadata;
 let coinbaseGame;
 let contractAddress;
 let ipfs;
 let textInput;
-export const setAttributes = (mt,cG,cA,r) => {
+let mapHash = "bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie";
+let mapTiles = "bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm";
+
+let mapName = "!CL_DEMO_32x32";
+
+export const setAttributes = (mt,cG,cA,r,mH,mN,tM,mT) => {
   metadata = mt
   coinbaseGame = cG;
   contractAddress = cA;
-  ipfs = r
+  ipfs = r;
+  if(mH){
+    mapHash = mH;
+  }
+  if(mN){
+    mapName = mN;
+  }
+  if(tM){
+    topicMovements = tM;
+  }
+  if(mT){
+    mapTiles = mT;
+  }
 }
 
 export const setTextInput = (tI) => {
@@ -91,68 +109,75 @@ class MainScene extends Phaser.Scene {
     console.log(this);
 
     this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
-    this.load.image("tiles", "https://ipfs.io/ipfs/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm");
+    this.load.image("tiles", `https://ipfs.io/ipfs/${mapTiles}`);
 
-    this.load.tilemapTiledJSON("map", "https://ipfs.io/ipfs/bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie");
+    this.load.tilemapTiledJSON("map", `https://ipfs.io/ipfs/${mapHash}`);
 
 
   }
 
   create = async () => {
-    window.addEventListener('resize', this.resize);
-    this.resize();
+
     const map = this.make.tilemap({key: 'map'});
+    let layers = [];
+    this.map = map;
     //this.add.image(1000,1020,'background')
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
     // Pody.stop();ody.stop();haser's cache (i.e. the name you used in preload)
-    const tileset = map.addTilesetImage("!CL_DEMO_32x32", "tiles");
-    // Parameters: layer name (or index) from Tiled, tileset, x, y
-    const bellowLayer = map.createLayer("Ground", tileset, 0, 0);
-    const worldLayer = map.createLayer("Layer1", tileset, 0, 0);
-    const waterLayer = map.createLayer("Water", tileset, 0, 0);
-    const layer2 = map.createLayer("Layer2", tileset, 0, 0);
-
-    worldLayer.setCollisionByProperty({ collides: true });
-    waterLayer.setCollisionByProperty({ collides: true });
-    layer2.setCollisionByProperty({ collides: true });
-    worldLayer.setCollisionByExclusion([-1]);
-    waterLayer.setCollisionByExclusion([-1]);
-    layer2.setCollisionByExclusion([-1]);
+    const tileset = map.addTilesetImage(mapName, "tiles");
 
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.otherPlayers = this.physics.add.group();
     this.friendlyPlayers = this.physics.add.group();
+    for(let layer of map.layers){
+      const l = map.createLayer(layer.name,tileset,0,0);
+      console.log(l)
 
-
-    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    //this.createLandscape();
-    this.cameras.main.setZoom(2);
-
+      layers.push(l)
+      l.setCollisionByProperty({ collides: true });
+    }
     //  Add a player ship and camera follow
-    this.player = this.physics.add.sprite(Phaser.Math.Between(4200, 4500), Phaser.Math.Between(4200, 4500), 'ship');
+    this.player = this.physics.add.sprite(
+      Phaser.Math.Between(map.widthInPixels/2, map.widthInPixels/3),
+      Phaser.Math.Between(map.heightInPixels/2, map.heightInPixels/3),
+      'ship');
     this.player.setBounce(0).setCollideWorldBounds(true);
     this.player.displayWidth = 64;
     //scale evenly
     this.player.scaleY = this.player.scaleX;
     this.player.name = this.metadata.name;
+
+
+
+    for(let l of layers){
+      let collides = false;
+      if(l.layer.properties[0]){
+          if(l.layer.properties[0].value === true){
+            collides = true
+          }
+      }
+      if(l.layer.data[0][0].properties.collides){
+        collides = true
+      }
+      console.log(collides)
+      if(collides){
+        this.physics.add.collider(this.player,l);
+        this.physics.add.collider(this.otherPlayers,l);
+        this.physics.add.collider(this.friendlyPlayers, l);
+        l.setCollisionByExclusion([-1]);
+
+      }
+    }
+
     this.cameras.main.startFollow(this.player, false, 0.2, 0.2);
     this.cameras.main.setZoom(1);
 
-    this.physics.add.collider(this.player,worldLayer);
-    this.physics.add.collider(this.player,layer2);
-    this.physics.add.collider(this.player,waterLayer);
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-
-    this.physics.add.collider(this.otherPlayers,worldLayer);
-    this.physics.add.collider(this.otherPlayers,layer2);
-    this.physics.add.collider(this.otherPlayers,waterLayer);
-
-    this.physics.add.collider(this.friendlyPlayers, worldLayer);
-    this.physics.add.collider(this.friendlyPlayers, layer2);
-    this.physics.add.collider(this.friendlyPlayers, waterLayer);
 
     this.cursors = this.input.keyboard.createCursorKeys();
+
     this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
     setInterval(async () => {
       const newPeerIds = await this.ipfs.pubsub.peers(topicMovements);
@@ -176,10 +201,11 @@ class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.player,this.otherPlayers,this.handleCollision,null, this);
 
 
+
     this.prepareChat();
     this.sendMessagePlayerEntered();
-
-
+    window.addEventListener('resize', this.resize);
+    this.resize();
 
   }
 
@@ -217,13 +243,14 @@ class MainScene extends Phaser.Scene {
 
     if((this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        !this.msgMovementStarted){
+
       this.msgMovementStarted = true;
       this.sendMessage(topicMovements,msg)
 
     }
     if(!(this.cursors.left.isDown || this.cursors.right.isDown || this.cursors.up.isDown || this.cursors.down.isDown) &&
        this.msgMovementStarted){
-      
+
       this.msgMovementStarted = false;
       this.sendMessage(topicMovements,msg)
 
@@ -232,12 +259,14 @@ class MainScene extends Phaser.Scene {
   }
 
   sendMessage = async (topic,msg) => {
+
     const msgSend = new TextEncoder().encode(msg)
     await this.ipfs.pubsub.publish(topic, msgSend)
   }
 
   prepareChat = () => {
     this.totalPlayersCounter = this.add.text(this.player.x + 280, this.player.y - 200,`Total of ${this.totalPlayers} players online`, { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
+
     this.chat = this.add.text(this.player.x + 280, this.player.y - 150, "", { lineSpacing: 15, backgroundColor: "#21313CDD", color: "#26924F", padding: 10, fontStyle: "bold",fontSize: '10px' });
     this.chat.setFixedSize(400, 300);
 
@@ -260,6 +289,7 @@ class MainScene extends Phaser.Scene {
   handleMessages = (msg) => {
     try{
       const obj = JSON.parse(new TextDecoder().decode(msg.data));
+
       if(obj.type === "movement" && obj.metadata.name !== metadata.name){
         console.log("Movement from "+obj.metadata.name);
         let added = false;
@@ -326,7 +356,10 @@ class MainScene extends Phaser.Scene {
       }
       if(obj.type === "collision"){
         if(obj.name === this.metadata.name){
-          this.player.setPosition(Phaser.Math.Between(500, 4600),Phaser.Math.Between(500, 4600));
+          this.player.setPosition(
+            Phaser.Math.Between(this.map.widthInPixels/2, this.map.widthInPixels/3),
+            Phaser.Math.Between(this.map.heightInPixels/2, this.map.heightInPixels/3)
+          );
           const str = JSON.stringify({
             message: `${this.metadata.name} died!`,
             from: this.coinbaseGame,
@@ -336,8 +369,6 @@ class MainScene extends Phaser.Scene {
           });
           this.sendMessage(topicMovements,str);
         }
-        this.chat.setText(this.chatMessages);
-
       }
 
       if(obj.type === "message"){
@@ -348,6 +379,7 @@ class MainScene extends Phaser.Scene {
         this.chat.setText(this.chatMessages);
 
       }
+
     } catch(err){
       console.log(err)
     }
@@ -385,6 +417,8 @@ class MainScene extends Phaser.Scene {
       type: "message"
     });
     await this.sendMessage(topicMovements,msg);
+
+
     msg = JSON.stringify({
       metadata: this.metadata,
       contractAddress: this.contractAddress,
@@ -394,6 +428,7 @@ class MainScene extends Phaser.Scene {
       type: "movement"
     });
     await this.sendMessage(topicMovements,msg);
+
   }
 
 

@@ -108,7 +108,14 @@ class MainScene extends Phaser.Scene {
     });
     console.log(this);
 
-    this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+    if(this.metadata.image_data){
+      const blob = new Blob([this.metadata.image_data.replace("data:image/svg+xml;utf8,","")], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      this.load.svg('ship', url);
+    } else {
+      this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+    }
+
     this.load.image("tiles", `https://ipfs.io/ipfs/${mapTiles}`);
 
     this.load.tilemapTiledJSON("map", `https://ipfs.io/ipfs/${mapHash}`);

@@ -5,10 +5,8 @@ export default function FooterComponent (props) {
   return(
     <Footer background="brand" pad="medium" size="small">
       <Anchor href="https://phaser.io/" target="_blank" rel="noreferrer">Done with phaser</Anchor>
-      <Anchor href="https://thehashavatars.com" target="_blank" rel="noreferrer">Modified from The HashAvatars</Anchor>
-      <Anchor href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Du</Anchor>
+      <Anchor href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Do</Anchor>
       <Anchor href="https://github.com/henrique1837/thevibes/tree/ipfs-pubsub-version" target="_blank" rel="noreferrer">Github</Anchor>
-      <Anchor href="https://szadiart.itch.io/craftland-demo" target="_blank" rel="noreferrer">Tileset by Szadiart</Anchor>
       {
         props.ipfs &&
         <Paragraph size="small">

@@ -22,10 +22,14 @@ export default function MyNfts (props) {
       <Box alignContent="center" align="center" pad="medium" direction="row-responsive" wrap={true}>
       {
         props.myOwnedNfts?.map(obj => {
-          if(!obj.metadata?.image){
+          if(!obj.metadata?.image && !obj.metadata?.image_data){
             return;
           }
+          console.log(obj.metadata)
           let tokenURI = obj.metadata.image;
+          if(!tokenURI){
+            tokenURI = obj.metada.image_data;
+          }
           let uri;
           if(!tokenURI.includes("://")){
             uri = `https://ipfs.io/ipfs/${tokenURI}`;

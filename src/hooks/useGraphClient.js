@@ -5,9 +5,10 @@ import { useState } from "react";
 import { ApolloClient, InMemoryCache,gql } from '@apollo/client';
 
 const APIURL_XDAI = "https://api.thegraph.com/subgraphs/name/leon-do/xdai-erc721-erc1155";
-const APIURL_ETH = "https://api.thegraph.com/subgraphs/name/ryry79261/mainnet-erc721-erc1155";
+const APIURL_ETH = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-mainnet";
 const APIURL_POLYGON = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic";
 const APIURL_BSC = "https://api.thegraph.com/subgraphs/name/leon-do/bsc-erc721-erc1155";
+const APIURL_BOBA = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-boba";
 const APIURL_AVALANCHE = "https://api.thegraph.com/subgraphs/name/leon-do/avalanche-erc721-erc1155";
 const APIURL_RINKEBY = "https://api.thegraph.com/subgraphs/name/leon-do/rinkeby-erc721-erc1155";
 
@@ -37,6 +38,12 @@ function useGraphClient() {
      if(netId === 56){
        newClient = new ApolloClient({
          uri: APIURL_BSC,
+         cache: new InMemoryCache()
+       });
+     }
+     if(netId === 288){
+       newClient = new ApolloClient({
+         uri: APIURL_BOBA,
          cache: new InMemoryCache()
        });
      }
@@ -76,7 +83,7 @@ function useGraphClient() {
       }
    `;
    // No Support for ERC1155 polygon yet
-   if(netId === 137){
+   if(netId === 137 || netId === 1){
      tokensQuery = `
         query {
           accounts(where: {id: "${address.toLowerCase()}"}) {

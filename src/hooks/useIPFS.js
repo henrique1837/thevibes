@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import * as IPFS from 'ipfs';
 function useIpfs() {
 
   const [ipfs,setIpfs] = useState();
   const [ipfsErr,setIpfsErr] = useState();
 
-  useEffect( () => {
+  useMemo( () => {
 
     if(!ipfs){
 

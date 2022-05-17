@@ -22,6 +22,7 @@ ReactDOM.render(
         <Route path="/badrobots-v0" element={<Navigate to="/destruction/bafkreig2opzec3rhplcedyztvorfuls3cqjx3qj3gtrbhemzipf52tm5za/bafkreihakwnufz66i2nmbh3qr7jiri3ulhqwpsc2gimsqzypl4arsuyway/badrobots-v0" />} />
 
         <Route path="/:mapName/:mapHash/:mapTiles/:spaceName" element={<App />} />
+        <Route path="*" element={<Navigate to="/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0" />} />
       </Routes>
     </Router>
   </Grommet>,

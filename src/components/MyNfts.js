@@ -28,16 +28,16 @@ export default function MyNfts (props) {
           console.log(obj.metadata)
           let tokenURI = obj.metadata.image;
           if(!tokenURI){
-            tokenURI = obj.metada.image_data;
+            tokenURI = obj.metadata.image_data;
           }
           let uri;
-          if(!tokenURI.includes("://")){
+          if(!tokenURI.includes("://") && !tokenURI.includes("data:image/svg+xml;base64,")){
             uri = `https://ipfs.io/ipfs/${tokenURI}`;
           } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-          } else {
+          } else{
             uri = tokenURI
-          }
+          } 
           return(
             <Card  height="medium" width="small" background="light-1">
               <CardHeader pad="medium"><b>{obj.metadata.name}</b></CardHeader>

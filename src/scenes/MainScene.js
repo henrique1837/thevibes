@@ -109,7 +109,13 @@ class MainScene extends Phaser.Scene {
     console.log(this);
 
     if(this.metadata.image_data){
-      const blob = new Blob([this.metadata.image_data.replace("data:image/svg+xml;utf8,","")], { type: 'image/svg+xml' });
+      let image_data;
+      if(this.metadata.image_data.includes("data:image/svg+xml;base64,")){
+        image_data = atob(this.metadata.image_data.replace("data:image/svg+xml;base64,",""));
+      } else {
+        image_data = this.metadata.image_data.replace("data:image/svg+xml;utf8,","");
+      }
+      const blob = new Blob([image_data], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       this.load.svg('ship', url);
     } else {
@@ -154,6 +160,15 @@ class MainScene extends Phaser.Scene {
     this.player.scaleY = this.player.scaleX;
     this.player.name = this.metadata.name;
 
+    // Adaptation for ColorGhosts
+    this.player.nftVelocity = 0;
+    if(this.metadata.attributes){
+      this.metadata.attributes.map(item => {
+        if(item.trait_type.toLowerCase() === "velocity"){
+          this.player.nftVelocity = Number(item.value)
+        }
+      })
+    }
 
 
     for(let l of layers){
@@ -211,6 +226,8 @@ class MainScene extends Phaser.Scene {
 
     this.prepareChat();
     this.sendMessagePlayerEntered();
+
+
     window.addEventListener('resize', this.resize);
     this.resize();
 
@@ -226,15 +243,14 @@ class MainScene extends Phaser.Scene {
       this.totalPlayersCounter.x = this.player.body.position.x + 280 ;
       this.totalPlayersCounter.y = this.player.body.position.y - 200;
     }
-
     if (this.cursors.left.isDown){
-      this.player.setVelocityX(-150);
+      this.player.setVelocityX(-150-this.player.nftVelocity);
     } else if (this.cursors.right.isDown){
-      this.player.setVelocityX(150);
+      this.player.setVelocityX(150+this.player.nftVelocity);
     } else if (this.cursors.up.isDown){
-      this.player.setVelocityY(-150);
+      this.player.setVelocityY(-150-this.player.nftVelocity);
     } else if (this.cursors.down.isDown){
-      this.player.setVelocityY(150);
+      this.player.setVelocityY(150+this.player.nftVelocity);
     } else {
       this.player.setVelocity(0);
     }
@@ -334,8 +350,20 @@ class MainScene extends Phaser.Scene {
           otherPlayer.name =  obj.metadata.name
           otherPlayer.contractAddress = obj.contractAddress;
           const loader = new Phaser.Loader.LoaderPlugin(this);
-
-          loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+          console.log(loader)
+          if(obj.metadata.image_data){
+            let image_data;
+            if(obj.metadata.image_data.includes("data:image/svg+xml;base64,")){
+              image_data = atob(obj.metadata.image_data.replace("data:image/svg+xml;base64,",""));
+            } else {
+              image_data = obj.metadata.image_data.replace("data:image/svg+xml;utf8,","");
+            }
+            const blob = new Blob([image_data], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            loader.svg(obj.metadata.name, url);
+          } else {
+            loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+          }
           loader.once(Phaser.Loader.Events.COMPLETE, () => {
             // texture loaded so use instead of the placeholder
             otherPlayer.setTexture(obj.metadata.name)

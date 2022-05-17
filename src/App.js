@@ -18,7 +18,6 @@ import {
  } from 'grommet';
 
 import {
-  useLocation,
   useNavigate,
   useParams
 } from 'react-router-dom';
@@ -43,7 +42,6 @@ export default function App () {
 
   const gameRef = useRef(null);
   const {
-    provider,
     coinbase,
     netId,
     loadWeb3Modal
@@ -59,7 +57,6 @@ export default function App () {
 
   const {mapHash,mapName,spaceName,mapTiles} = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [msgs,setMsgs] = useState([]);
   const [myOwnedNfts,setMyOwnedNfts] = useState();
@@ -123,7 +120,7 @@ export default function App () {
             resolve({});
           }
           if(!tokenURI.includes("://")){
-              uri = `https://ipfs.io/ipfs/${tokenURI}`;
+            uri = `https://ipfs.io/ipfs/${tokenURI}`;
           } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           } else if(tokenURI.includes("data:application/json;base64")) {
@@ -131,9 +128,10 @@ export default function App () {
           } else {
             uri = tokenURI;
           }
+          console.log(tokenURI)
           let metadataToken;
           if(tokenURI.includes("data:application/json;base64")){
-            metadataToken = JSON.parse(atob(uri));
+            metadataToken = JSON.parse(atob(tokenURI.replace("data:application/json;base64,","")));
           } else {
             metadataToken = JSON.parse(await (await fetch(uri)).text());
           }
@@ -160,9 +158,11 @@ export default function App () {
   useEffect(() => {
     if(value === "TheVibes"){
       navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
-    }
-    if(value === "CryptoBadRobots"){
+    } else if(value === "CryptoBadRobots"){
       navigate("/destruction/bafkreig2opzec3rhplcedyztvorfuls3cqjx3qj3gtrbhemzipf52tm5za/bafkreihakwnufz66i2nmbh3qr7jiri3ulhqwpsc2gimsqzypl4arsuyway/badrobots-v0")
+    } else {
+      navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
+
     }
   },[value])
 
@@ -189,6 +189,7 @@ export default function App () {
           const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
           promises = erc721Tokens.map(getMetadata);
           const newMyOwnedNfts = await Promise.all(promises)
+          console.log(newMyOwnedNfts)
           setMyOwnedNfts(newMyOwnedNfts);
         }
 
@@ -210,18 +211,14 @@ export default function App () {
   useMemo(async () => {
     if(ipfs && !subscribed){
       await ipfs.pubsub.subscribe(topic, async (msg) => {
-        console.log(new TextDecoder().decode(msg.data));
-        const obj = JSON.parse(new TextDecoder().decode(msg.data));
-        const newMsgs = msgs;
-        newMsgs.unshift(obj);
-        setMsgs(newMsgs);
+        console.log(`${msg.receivedFrom} is connected`);
       });
 
       setInterval(async () => {
+        await ipfs.pubsub.publish(topic,`Connected!`)
         const newPeerIds = await ipfs.pubsub.peers(topic);
         setConnectedUsers(newPeerIds.length);
       },5000);
-
       setSubscribed(true);
 
     }
@@ -343,7 +340,7 @@ export default function App () {
                         setMetadata({
                           metadata: {
                             name: `Guest-${Math.random()}`,
-                            image: 'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF'
+                            image: guests[Math.floor(Math.random()*guests.length)]
                           },
                           address: '0x000'
                         })

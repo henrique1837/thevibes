@@ -82,8 +82,8 @@ function useGraphClient() {
         }
       }
    `;
-   // No Support for ERC1155 polygon yet
-   if(netId === 137 || netId === 1){
+   // No Support for ERC1155 polygon,ethereum,boba yet
+   if(netId === 137 || netId === 1 || netId === 288){
      tokensQuery = `
         query {
           accounts(where: {id: "${address.toLowerCase()}"}) {

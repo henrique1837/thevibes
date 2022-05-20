@@ -11,7 +11,7 @@ const updateWebpackModuleRules = (config) => {
   const sourceMapLoader = {
     enforce: 'pre',
     exclude: /@babel(?:\/|\\{1,2})runtime/,
-    test: /\.(js|m?js|jsx|ts|tsx|css)$/,
+    test: /\.(js|m?js|jsx|ts|tsx|css|wasm)$/,
     use: [
       {
         loader: 'source-map-loader',
@@ -26,7 +26,7 @@ const updateWebpackModuleRules = (config) => {
       },
     ],
      resolve: {
-	fullySpecified: false
+	      fullySpecified: false
      }
   }
 

@@ -22,12 +22,14 @@ import {
   useParams
 } from 'react-router-dom';
 
-
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
 import Game from './Game';
+import Game3D from './Game3D';
+
 import {setAttributes,setTextInput} from './scenes/MainScene';
+import {setAttributes as setAttributes3D,setTextInput as setTextInput3D} from './scenes/MainScene3D';
 
 import FooterComponent from './components/Footer';
 import MyNfts from './components/MyNfts';
@@ -67,6 +69,8 @@ export default function App () {
 
   const [metadataPlayer,setMetadataPlayer] = useState();
   const [initialize, setInitialize] = useState(false);
+  const [initialize3d, setInitialize3d] = useState(false);
+
   const [subscribed,setSubscribed] = useState();
   const [connections,setConnectedUsers] = useState(0);
 
@@ -91,15 +95,27 @@ export default function App () {
       path: "/badrobots-v0",
       uri: "https://cryptobadrobots-crypto.ipns.dweb.link/",
       tilesetURI: "https://szadiart.itch.io/postapo-lands-demo"
+    },
+    {
+      name: "TheVibes3D",
+      image : "https://ipfs.io/ipfs/bafkreiaui7kqyj22m7m6lbt22l3w3kfkhxxfz33f5vgpryalegp35q7k7m",
+      description: "TheVibes Space done with enable3d",
+      path: "/thespace3d-v0",
+      //tilesetURI: "https://szadiart.itch.io/postapo-lands-demo"
     }
   ]
 
   const setMetadata = (obj) => {
 
-    setAttributes(obj.metadata,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,mapTiles);
     setMetadataPlayer(obj.metadata);
-    setTextInput(document.getElementById("textInput"));
-    setInitialize(true);
+    if(mapHash === "null" || mapTiles === "null"){
+      setAttributes3D(obj.metadata,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,mapTiles)
+      setInitialize3d(true);
+    } else {
+      setAttributes(obj.metadata,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,mapTiles);
+      setTextInput(document.getElementById("textInput"));
+      setInitialize(true);
+    }
 
   }
 
@@ -153,6 +169,9 @@ export default function App () {
     if(spaceName === "badrobots-v0"){
       setValue("CryptoBadRobots")
     }
+    if(spaceName === "theSpace3d-v0"){
+      setValue("TheVibes3D")
+    }
   },[spaceName])
 
   useEffect(() => {
@@ -160,9 +179,10 @@ export default function App () {
       navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
     } else if(value === "CryptoBadRobots"){
       navigate("/destruction/bafkreig2opzec3rhplcedyztvorfuls3cqjx3qj3gtrbhemzipf52tm5za/bafkreihakwnufz66i2nmbh3qr7jiri3ulhqwpsc2gimsqzypl4arsuyway/badrobots-v0")
+    } else if(value === "TheVibes3D"){
+      navigate("/enable3d/null/null/theSpace3d-v0")
     } else {
       navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
-
     }
   },[value])
 
@@ -211,7 +231,7 @@ export default function App () {
   useMemo(async () => {
     if(ipfs && !subscribed){
       await ipfs.pubsub.subscribe(topic, async (msg) => {
-        console.log(`${msg.receivedFrom} is connected`);
+        //console.log(`${msg.receivedFrom} is connected`);
       });
 
       setInterval(async () => {
@@ -248,6 +268,16 @@ export default function App () {
                   ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
                 }
                 </> :
+                initialize3d ?
+                <>
+                {
+                  ipfs &&
+                  <>
+                  <div>Use WASD, SPACE and your Mouse.<br />Works on mobile and desktop.</div>
+                  <IonPhaser ref={gameRef} game={Game3D()}  initialize={initialize3d} metadata={metadataPlayer}/>
+                  </>
+                }
+                </> :
                 <>
                 <Header background="brand" align="start">
                   <Heading margin="small">The Vibes Beta</Heading>
@@ -267,7 +297,7 @@ export default function App () {
                   </Paragraph>
                   <Paragraph>Select Space</Paragraph>
                   <Select
-                      options={["TheVibes","CryptoBadRobots"]}
+                      options={["TheVibes","CryptoBadRobots","TheVibes3D"]}
                       value={value}
                       onChange={({ option }) => {
                         setValue(option)
@@ -286,8 +316,14 @@ export default function App () {
                             <Paragraph>{item.description}</Paragraph>
                           </CardBody>
                           <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                            <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
-                            <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
+                            {
+                              item.uri &&
+                              <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
+                            }
+                            {
+                              item.tilesetURI &&
+                              <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
+                            }
                           </CardFooter>
                         </Card>
                       )
@@ -309,7 +345,7 @@ export default function App () {
                   <Button primary onClick={() => {
                     setMetadata({
                       metadata: {
-                        name: `Guest-${Math.random()}`,
+                        name: `Guest-${Math.random().toString()}`,
                         image: guests[Math.floor(Math.random()*guests.length)]
                       },
                       address: '0x000'
@@ -339,7 +375,7 @@ export default function App () {
                       <Button primary onClick={() => {
                         setMetadata({
                           metadata: {
-                            name: `Guest-${Math.random()}`,
+                            name: `Guest-${Math.round(Math.random()*100000).toString()}`,
                             image: guests[Math.floor(Math.random()*guests.length)]
                           },
                           address: '0x000'
@@ -360,7 +396,7 @@ export default function App () {
                   placeholder="Enter a message and press enter to send ..."
                 />
               </Box>
-              <FooterComponent ipfs={ipfs} connections={connections}  />
+              <FooterComponent style={{display: initialize3d ? 'none' : 'block'}} ipfs={ipfs} connections={connections}  />
 
             </center>
       )

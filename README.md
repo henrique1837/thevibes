@@ -43,6 +43,11 @@ Any of URLs
  - https://ipfs.io/ipns/thevibes-space.crypto/
  - ipns://thevibes-space.crypto/
 
+## Contact
+
+  - Discord: bongador#2753
+  - UNS Email: bongador@protonmail.com
+
 ## Testing Guide
 
 ### As Guest

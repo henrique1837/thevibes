@@ -4,9 +4,8 @@ import { Footer,Anchor,Image,Paragraph } from 'grommet';
 export default function FooterComponent (props) {
   return(
     <Footer background="brand" pad="medium" size="small">
-      <Anchor href="https://phaser.io/" target="_blank" rel="noreferrer">Done with phaser</Anchor>
-      <Anchor href="https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155" target="_blank" rel="noreferrer">Subgraphs by Leon Do</Anchor>
-      <Anchor href="https://github.com/henrique1837/thevibes/tree/ipfs-pubsub-version" target="_blank" rel="noreferrer">Github</Anchor>
+      <Anchor href="https://twitter.com/thevibes_space" target="_blank" rel="noreferrer">Github</Anchor>
+      <Anchor href="https://github.com/henrique1837/thevibes" target="_blank" rel="noreferrer">Twitter</Anchor>
       {
         props.ipfs &&
         <Paragraph size="small">

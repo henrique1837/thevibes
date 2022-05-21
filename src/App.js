@@ -25,6 +25,7 @@ import {
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
+
 import Game from './Game';
 import Game3D from './Game3D';
 
@@ -41,12 +42,12 @@ const topic = 'hash-avatars/games/first-contact';
 export default function App () {
 
   const [graphErr,setGraphErr] = useState();
-
   const gameRef = useRef(null);
   const {
     coinbase,
     netId,
-    loadWeb3Modal
+    loadWeb3Modal,
+    user
   } = useWeb3Modal();
 
   const { ipfs,ipfsErr } = useIPFS();
@@ -73,6 +74,7 @@ export default function App () {
 
   const [subscribed,setSubscribed] = useState();
   const [connections,setConnectedUsers] = useState(0);
+  const [peers,setPeers] = useState([]);
 
   const guests = [
     'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF',
@@ -186,6 +188,7 @@ export default function App () {
     }
   },[value])
 
+
   useEffect(() => {
     if(!coinbase){
       setLoadingMyNFTs(false);
@@ -232,12 +235,14 @@ export default function App () {
     if(ipfs && !subscribed){
       await ipfs.pubsub.subscribe(topic, async (msg) => {
         //console.log(`${msg.receivedFrom} is connected`);
+      }).catch(err => {
+        console.log(err)
       });
-
+      const newPeerIds = await ipfs.pubsub.peers(topic);
       setInterval(async () => {
-        await ipfs.pubsub.publish(topic,`Connected!`)
         const newPeerIds = await ipfs.pubsub.peers(topic);
-        setConnectedUsers(newPeerIds.length);
+        await ipfs.pubsub.publish(topic,newPeerIds)
+
       },5000);
       setSubscribed(true);
 
@@ -353,7 +358,25 @@ export default function App () {
                   }} label="Enter as Guest" />
                   </Box> :
                   <>
-                  <Paragraph style={{wordBreak: 'break-word'}}>Connected as {coinbase}</Paragraph>
+                  <Paragraph style={{wordBreak: 'break-word'}}>Connected as {user ? user.sub : coinbase}</Paragraph>
+                  {
+                    user &&
+                    <Card  height="medium" width="medium" background="light-1" align="center">
+                      <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
+                      <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
+                      <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                        <Button secondary onClick={() => {
+                          setMetadata({
+                            metadata: {
+                              name: user.sub,
+                              image: `https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`
+                            },
+                            address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
+                          })
+                        }} size="small" label="Select" />
+                      </CardFooter>
+                    </Card>
+                  }
                   </>
                 }
                 {

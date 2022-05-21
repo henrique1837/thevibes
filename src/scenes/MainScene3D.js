@@ -57,7 +57,8 @@ class MainScene extends Scene3D {
     this.ipfs = ipfs;
     this.coinbaseGame = coinbaseGame;
     this.contractAddress = contractAddress;
-
+    this.totalPlayers = 0;
+    this.peers = [];
     this.otherPlayers = []
     this.friendlyPlayers = [];
 
@@ -86,6 +87,14 @@ class MainScene extends Scene3D {
 
 
     this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
+    setInterval(async () => {
+      const newPeerIds = await ipfs.pubsub.peers(topicMovements);
+      if(newPeerIds.length !== this.totalPlayers){
+        this.totalPlayers = newPeerIds.length;
+        this.peers = newPeerIds;
+        console.log(`Total of ${this.totalPlayers} players connected`);
+      }
+    },5000);
     //this.third.physics.debug.enable()
     this.images = [];
     await this.prepareScenario()
@@ -174,7 +183,7 @@ class MainScene extends Scene3D {
     })
 
 
-    // height map from https://tangrams.github.io/heightmapper/#1.11667/21.3/478.2
+    // height map from https://i.stack.imgur.com/NvF5e.jpg
     const heightmap = await this.third.load.texture('/assets/heightmap/heightmap.png')
     // Powered by Chroma.js (https://github.com/gka/chroma.js/)
     const colorScale = chroma
@@ -443,7 +452,6 @@ class MainScene extends Scene3D {
     });
     await this.sendMessage(topicMovements,msg);
 
-
     msg = JSON.stringify({
       metadata: this.metadata,
       contractAddress: this.contractAddress,
@@ -465,7 +473,7 @@ class MainScene extends Scene3D {
     const material = new THREE.SpriteMaterial( { map: playerImg } );
     const sprite = new THREE.Sprite( material );
     sprite.position.y = 0.2;
-    const body = this.third.add.box({ height: 0.1, y: 0, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
+    const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
     //body.material.invisible = true;
     otherPlayer.add(body)
     otherPlayer.add(sprite)
@@ -603,6 +611,7 @@ class MainScene extends Scene3D {
 
       }
       */
+
 
     } catch(err){
       console.log(err)

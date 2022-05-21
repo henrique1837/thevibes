@@ -1,4 +1,4 @@
-# TheVibes
+# TheVibes Space
 
 A place where NFTs can play togheter and have fun. Currently playable with NFTs from  Rinkeby, Ethereum, BSC, Avalanche, XDAI, Polygon and Boba network.
 
@@ -7,7 +7,7 @@ Users can also enter as guest (no NFT in wallet / not connected the wallet to th
 Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md) to allow chat messages between players and show positions/movements in the game.
 
 
-Map was done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
+2D Maps were done using tiles from [itch.io](https://itch.io/game-assets/free/tag-tileset) and generated using [map editor](https://www.mapeditor.org/).
 
 
 TheVibes3D done with [Enable3D](https://enable3d.io/), map done from [heightmap](https://i.stack.imgur.com/NvF5e.jpg), assets from [sketchfab](https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270)
@@ -15,7 +15,7 @@ TheVibes3D done with [Enable3D](https://enable3d.io/), map done from [heightmap]
 
 NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/xdai-erc721-erc1155 and https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic (and theirs networks);
 
-Included UNS Login
+Included [UNS Login](https://docs.unstoppabledomains.com/login-with-unstoppable/), user can use its domain as character.
 
 Still a Proof of Concept:
 
@@ -27,6 +27,8 @@ Still a Proof of Concept:
 
 ## UNS Login Demo Video
 
+  https://bafybeibh2ht5h3amo7hrmanxswa5mayi5z6itorp6g7skfaehdvzkhcdqm.ipfs.infura-ipfs.io/
+
 ## Demo Video
 
   https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/
@@ -36,11 +38,10 @@ Still a Proof of Concept:
 
 Any of URLs
 
- - https://thevibes--space.crypto.ipns.dweb.link/
+ - https://thevibes--space-crypto.ipns.dweb.link/
  - https://gateway.pinata.cloud/ipns/thevibes-space.crypto/
  - https://ipfs.io/ipns/thevibes-space.crypto/
  - ipns://thevibes-space.crypto/
- - https://thevibes-space.crypto/
 
 ## Testing Guide
 

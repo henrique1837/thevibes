@@ -37,9 +37,9 @@ export default function MyNfts (props) {
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           } else{
             uri = tokenURI
-          } 
+          }
           return(
-            <Card  height="medium" width="small" background="light-1">
+            <Card  height="medium" width="small" background="light-1" align="center">
               <CardHeader pad="medium"><b>{obj.metadata.name}</b></CardHeader>
               <CardBody pad="small"><Image alignSelf="center" src={uri} width="150px"/></CardBody>
               <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">

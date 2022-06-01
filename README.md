@@ -1,14 +1,21 @@
-# TheVibes
+# TheVibes Space
 
-A place where NFTs can play togheter and have fun. Currently playable with NFTs from  Rinkeby, Ethereum, BSC, Avalanche, XDAI, Polygon.
+A place where NFTs can play togheter and have fun. Currently playable with NFTs from  Rinkeby, Ethereum, BSC, Avalanche, XDAI, Polygon and Boba network.
 
 Users can also enter as guest (no NFT in wallet / not connected the wallet to the dapp).
 
 Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md) to allow chat messages between players and show positions/movements in the game.
 
-Map was done using tiles from https://itch.io/game-assets/free/tag-tileset and generated using https://www.mapeditor.org/.
 
-NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/polygon-erc721-erc1155 (and others networks except Ethereum mainnet, which used https://thegraph.com/hosted-service/subgraph/ryry79261/mainnet-erc721-erc1155).  
+2D Maps were done using tiles from [itch.io](https://itch.io/game-assets/free/tag-tileset) and generated using [map editor](https://www.mapeditor.org/).
+
+
+TheVibes3D done with [Enable3D](https://enable3d.io/), map done from [heightmap](https://i.stack.imgur.com/NvF5e.jpg), assets from [sketchfab](https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270)
+
+
+NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/xdai-erc721-erc1155 and https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic (and theirs networks);
+
+Included [UNS Login](https://docs.unstoppabledomains.com/login-with-unstoppable/), user can use its domain as character.
 
 Still a Proof of Concept:
 
@@ -18,20 +25,28 @@ Still a Proof of Concept:
 - Should the game get the actual map to be used from a smart contract controled by a DAO ?
 - How to allow users play with their own created maps ?
 
-## Demo
+## UNS Login Demo Video
 
-Any of URLs
-
- - https://thevibes-space.ipns.dweb.link/
- - https://gateway.pinata.cloud/ipns/thevibes.space/
- - https://ipfs.io/ipns/thevibes.space/
- - ipns://thevibes.space/
- - https://thevibes.space/
+  https://bafybeibh2ht5h3amo7hrmanxswa5mayi5z6itorp6g7skfaehdvzkhcdqm.ipfs.infura-ipfs.io/
 
 ## Demo Video
 
   https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/
 
+
+## Demo
+
+Any of URLs
+
+ - https://thevibes--space-crypto.ipns.dweb.link/
+ - https://gateway.pinata.cloud/ipns/thevibes-space.crypto/
+ - https://ipfs.io/ipns/thevibes-space.crypto/
+ - ipns://thevibes-space.crypto/
+
+## Contact
+
+  - Discord: bongador#2753
+  - UNS Email: bongador@protonmail.com
 
 ## Testing Guide
 

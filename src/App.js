@@ -25,6 +25,7 @@ import {
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
+import Room from 'ipfs-pubsub-room';
 
 import Game from './Game';
 import Game3D from './Game3D';
@@ -74,7 +75,7 @@ export default function App () {
 
   const [subscribed,setSubscribed] = useState();
   const [connections,setConnectedUsers] = useState(0);
-  const [peers,setPeers] = useState([]);
+  //const [peers,setPeers] = useState(0);
 
   const guests = [
     'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF',
@@ -233,18 +234,29 @@ export default function App () {
   },[client,coinbase,myOwnedNfts,netId]);
   useMemo(async () => {
     if(ipfs && !subscribed){
-      await ipfs.pubsub.subscribe(topic, async (msg) => {
-        //console.log(`${msg.receivedFrom} is connected`);
-      }).catch(err => {
-        console.log(err)
-      });
-      const newPeerIds = await ipfs.pubsub.peers(topic);
-      setInterval(async () => {
-        const newPeerIds = await ipfs.pubsub.peers(topic);
-        await ipfs.pubsub.publish(topic,newPeerIds)
+      const id = await ipfs.id();
+      const room = new Room(ipfs, topic);
+      room.on('peer joined', (peer) => {
+        console.log('Peer joined the room', peer);
+        const newConnections = connections + 1;
+        setConnectedUsers(connections);
 
-      },5000);
-      setSubscribed(true);
+      })
+
+      room.on('peer left', (peer) => {
+        console.log('Peer left...', peer);
+        const newConnections = connections - 1;
+        setConnectedUsers(newConnections);
+
+      })
+
+      // now started to listen to room
+      room.on('subscribed', () => {
+        console.log('Now connected!')
+      });
+      window.addEventListener('unload', function(event) {
+        room.leave();
+      });
 
     }
 
@@ -260,7 +272,6 @@ export default function App () {
         }
       }
     });
-
   },[])
 
   return (

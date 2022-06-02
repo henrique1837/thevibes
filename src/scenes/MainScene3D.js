@@ -8,8 +8,11 @@ import {
   PointerLock,
   PointerDrag
 } from '@enable3d/phaser-extension';
+import OrbitDB from 'orbit-db';
+import Room from 'ipfs-pubsub-room';
 
 
+const gameOrbitDB = '/orbitdb/zdpuAoPQbuca6q6zVVZU4AnTvSm1K2TzKbZLift9bzpodux3Z/TheVibes3D Assets';
 let topicMovements = 'hash-avatars/games/first-contact/movements';
 
 let metadata;
@@ -19,7 +22,6 @@ let ipfs;
 let textInput;
 let mapHash = "bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie";
 let mapTiles = "bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm";
-
 let mapName = "!CL_DEMO_32x32";
 
 export const setAttributes = (mt,cG,cA,r,mH,mN,tM,mT) => {
@@ -61,7 +63,7 @@ class MainScene extends Scene3D {
     this.peers = [];
     this.otherPlayers = []
     this.friendlyPlayers = [];
-
+    this.info = [];
   }
 
   preload = async () => {
@@ -83,46 +85,86 @@ class MainScene extends Scene3D {
   create = async () => {
     const {orbitControls} = this.third.warpSpeed('camera', 'sky', 'grid', 'ground', 'light');
     this.orbitControls = orbitControls;
+    const room = new Room(this.ipfs, topicMovements);
+    room.on('peer joined', (peer) => {
+      console.log('Peer joined the room', peer)
 
+    })
 
+    room.on('peer left', (peer) => {
+      console.log('Peer left...', peer);
+    })
 
-    this.ipfs.pubsub.subscribe(topicMovements,this.handleMessages);
-    setInterval(async () => {
-      const newPeerIds = await ipfs.pubsub.peers(topicMovements);
-      if(newPeerIds.length !== this.totalPlayers){
-        this.totalPlayers = newPeerIds.length;
-        this.peers = newPeerIds;
-        console.log(`Total of ${this.totalPlayers} players connected`);
-      }
-    },5000);
+    // now started to listen to room
+    room.on('subscribed', () => {
+      console.log('Now connected!')
+    });
+    window.addEventListener('unload', function(event) {
+      room.leave();
+    });
+
+    room.on('message',this.handleMessages);
+    this.room = room;
     //this.third.physics.debug.enable()
     this.images = [];
     await this.prepareScenario()
     await this.generatePlayer();
-    /*
-      "Fantasy Town" (https://sketchfab.com/3d-models/fantasy-town-0db322fa7a614975b83753a37c4e7350)
-      by Eh is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
-    */
-
-
-
-
     this.prepareControls();
     this.ready = true;
+    /* Create OrbitDB instance
+    OrbitDB.createInstance(ipfs)
+    .then(async orbitdb => {
+      const db = await orbitdb.keyvalue(gameOrbitDB);
+      console.log(`Connected to ${db.address}`);
+      const value = db.all
+      console.log(Object.keys(value))
+      this.db = db;
+      db.events.on('replicated', (address) => {
+        console.log(`Replicated DB with ${address}`);
+        const value = this.db.all
+        console.log(value)
+      });
+      db.events.on('peer', (peer) => {
+        console.log(`Connected to ${peer}`);
+      });
+      db.events.on('write', (address, entry, heads) => {
+        console.log(entry)
+      } )
+    })
+    .catch(err => {
+      console.log(err)
+    })
+    */
+
+    window.addEventListener('unload', function(event) {
+      this.room.leave();
+    });
+
   }
   generatePlayer = async() => {
     /**
      * Create Player
      */
+     // create text texture
+     const texture = new FLAT.TextTexture(this.metadata.name);
+     // texture in 3d space
+     const sprite3d = new FLAT.TextSprite(texture)
+     sprite3d.setScale(0.003)
 
     this.player = new THREE.Group();
     this.player.name = this.metadata.name;
+    this.player.metadata = this.metadata;
+
     const playerImg = await this.getPlayerImg(this.metadata);
     const material = new THREE.SpriteMaterial( { map: playerImg } );
     const sprite = new THREE.Sprite( material );
+    //const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
     sprite.position.y = 0.2;
+    sprite3d.position.y = 0.8;
     this.player.rotateY(Math.PI + 0.1) // a hack
+    //this.player.add(body)
     this.player.add(sprite)
+    this.player.add(sprite3d)
     this.player.position.set(2, 3, -1)
     this.player.scale.set(0.1,0.1,0.1);
 
@@ -155,7 +197,7 @@ class MainScene extends Scene3D {
       offset: new THREE.Vector3(0, 0.2, 0),
       targetRadius: 0.5
     });
-    await this.sendMessagePlayerEntered()
+    this.sendMessagePlayerEntered()
     window.addEventListener( 'resize', this.onWindowResize );
 
   }
@@ -193,10 +235,10 @@ class MainScene extends Scene3D {
     if (mesh) {
       // add custom material or a texture
       //mesh.material = new THREE.MeshPhongMaterial({ map: grass })
-
+      mesh.name = "WorldGround"
       // we position, scale, rotate etc. the mesh before adding physics to it
       mesh.scale.set(2, 2,1)
-      mesh.position.set(0,0,0)
+      mesh.position.set(0,0,0);
       // @ts-ignore
       this.third.physics.add.existing(mesh,{collisionFlags:1});
 
@@ -205,12 +247,13 @@ class MainScene extends Scene3D {
     "Low Poly Office Building 1" (https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270#download)
      by Kendy2008
      is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
-    */
+
     this.renderFBX('/assets/fbx/Office_1.fbx',{x:0.01,y:0.01,z:0.01},{x:-0.5,y:5,z:-1},1)
     this.renderFBX('/assets/fbx/PowerPlant.fbx',{x:0.01,y:0.01,z:0.01},{x:2,y:5,z:2},1);
     this.renderFBX('/assets/fbx/WaterProcessing.fbx',{x:0.01,y:0.01,z:0.01},{x:5.5,y:5,z:2.3},1)
 
     this.renderFBX('/assets/fbx/Office_3.fbx',{x:0.01,y:0.01,z:0.01},{x:-1,y:5,z:1},1);
+    */
     /*
     https://godgoldfear.itch.io/low-poly-trees
 
@@ -334,26 +377,99 @@ class MainScene extends Scene3D {
     })
     this.player.body.applyForceY(4)
   }
-  getInfo = async (player) => {
-    // Initialize the flat elements
-    this.ui = FLAT.init(this.renderer)
-    const orbitControls = this.orbitControls;
-    // Use this if you need events on the 2D elements.
-    // If you are using orbitControls, pass it to initEvents().
-    // This makes sure orbitControls is not messing with the mouse move.
-    //FLAT.initEvents({ canvas: this.renderer.domElement, orbitControls })
-
-    // Call Flat.destroy() on scene restart or stop
-    // or simply add FLAT to the deconstructor
-    this.deconstructor.add(FLAT /* same effect as FLAT.destroy */, orbitControls)
-
-    // create text texture
-    let texture = new FLAT.TextTexture(`Name: ${player.name}`);
-    // texture in 3d space
-    let sprite3d = new FLAT.TextSprite(texture)
-    this.scene.add(sprite3d)
-    sprite3d.position.set(player.position.x+2,player.position.y+4,player.position.z)
+  mountBase = async (player) => {
+    if(this.info[player.metadata.name]){
+      this.third.destroy(this.info[player.metadata.name]);
+    }
+    const image = await this.getPlayerImg(player.metadata);
+    const textureCube = this.third.misc.textureCube([image,image,image,image,image,image])
+    const body = this.third.add.box({ width: 0.5, height: 1, depth: 0.5 }, { custom: textureCube.materials,mass: 1000 })
+    body.position.set(player.position.x,player.position.y+2,player.position.z+2)
+    //cube.setScale(0.003)
+    this.third.physics.add.existing(body);
+    this.third.add.existing(body)
+    this.info[player.metadata.name] = body;
+    if(this.db){
+      this.db.put(this.player.name,{metadata: player.metadata,position:body.position})
+    }
+    this.third.physics.add.collider(body, this.player, async event => {
+      if(this.keys.d.isDown){
+        if(player.metadata.external_url){
+          const confirm = window.confirm(`Visit ${player.metadata.external_url} ?`)
+          if(confirm){
+            window.open(player.metadata.external_url,"_blank");
+          }
+        } else if(player.metadata.name.includes("Guest")){
+          const confirm = window.confirm(`Visit https://dweb.link/ipns/thehashavatars.crypto ?`)
+          if(confirm){
+            window.open("https://dweb.link/ipns/thehashavatars.crypto","_blank");
+          }
+        }
+      }
+    });
+    return(body);
   }
+  getInfo = async (player) => {
+    const body = await this.mountBase(player);
+    let msgSend = JSON.stringify({
+      metadata: this.metadata,
+      contractAddress: this.contractAddress,
+      player: this.player,
+      position: body.body.position,
+      velocity: body.body.velocity,
+      from: this.coinbaseGame,
+      type: "base"
+    });
+    this.sendMessage(topicMovements,msgSend);
+  }
+
+  shoot = () => {
+
+    const raycaster = new THREE.Raycaster()
+    const x = 0
+    const y = 0
+    const force = 5
+    const pos = new THREE.Vector3()
+
+    raycaster.setFromCamera({ x, y }, this.third.camera)
+
+    pos.copy(raycaster.ray.direction)
+    pos.add(raycaster.ray.origin)
+
+    const sphere = this.third.physics.add.sphere(
+      { radius: 0.025, x: pos.x, y: pos.y - 0.01, z: pos.z, mass: 10, bufferGeometry: true },
+      { phong: { color: 0x202020 } }
+    )
+
+    pos.copy(raycaster.ray.direction)
+    pos.multiplyScalar(24)
+
+    //sphere.body.applyForce(pos.x * force, pos.y * force, pos.z * force);
+    sphere.body.on.collision((otherObject, event) => {
+      if (otherObject.name !== 'ground')
+      if(otherObject.name === this.player.name){
+        this.third.physics.destroy(this.player)
+        this.player.position.set(2, 3, -1)
+        this.third.destroy(sphere);
+        this.third.physics.add.existing(this.player)
+
+      }
+    })
+    let msgSend = JSON.stringify({
+      metadata: this.metadata,
+      contractAddress: this.contractAddress,
+      player: this.player,
+      position: sphere.body.position,
+      velocity: sphere.body.velocity,
+      from: this.coinbaseGame,
+      type: "shoot"
+    });
+    this.sendMessage(topicMovements,msgSend);
+    setTimeout(() => {
+      this.third.destroy(sphere);
+    },2000)
+  }
+
   update = (time, delta) => {
     if(!this.ready){
       return
@@ -397,6 +513,7 @@ class MainScene extends Scene3D {
         this.player.body.setVelocity(x, y, z)
       }
 
+
       /**
        * Player Jump
        */
@@ -418,7 +535,7 @@ class MainScene extends Scene3D {
       const msg = JSON.stringify(obj);
 
 
-      if((this.keys.w.isDown || this.move ) && Math.round(this.time.now) % 10){ //&& !this.movementInit){
+      if((this.keys.w.isDown || this.move ) && Math.round(this.time.now) % 5 === 0){ //&& !this.movementInit){
         this.sendMessage(topicMovements,msg)
         this.movementInit = true
       }
@@ -428,18 +545,29 @@ class MainScene extends Scene3D {
         this.movementInit = false
       }
       */
-      if(this.isJumping && Math.round(this.time.now) % 10 === 0){
+      if(this.isJumping && Math.round(this.time.now) % 5 === 0){
         this.sendMessage(topicMovements,msg)
       }
-      if(Math.round(this.time.now) % 100 === 0){
+      if(Math.round(this.time.now) % 10 === 0){
         this.sendMessage(topicMovements,msg)
+      }
+      const raycaster = new THREE.Raycaster()
+
+      // shoot
+      if (this.keys.f.isDown) {
+        this.shoot();
+      }
+      // mount base
+      if (this.keys.a.isDown) {
+        this.getInfo(this.player);
+        //this.shoot();
       }
     }
   }
   sendMessage = async (topic,msg) => {
 
-    const msgSend = new TextEncoder().encode(msg)
-    await this.ipfs.pubsub.publish(topic, msgSend)
+    //const msgSend = new TextEncoder().encode(msg)
+    await this.room.broadcast(msg)
   }
   sendMessagePlayerEntered = async () => {
     let msg = JSON.stringify({
@@ -450,7 +578,7 @@ class MainScene extends Scene3D {
       metadata: this.metadata,
       type: "message"
     });
-    await this.sendMessage(topicMovements,msg);
+    this.sendMessage(topicMovements,msg);
 
     msg = JSON.stringify({
       metadata: this.metadata,
@@ -461,10 +589,15 @@ class MainScene extends Scene3D {
       from: this.coinbaseGame,
       type: "movement"
     });
-    await this.sendMessage(topicMovements,msg);
+    this.sendMessage(topicMovements,msg);
 
   }
   addOtherPlayer = async (obj) => {
+    // create text texture
+    const texture = new FLAT.TextTexture(obj.metadata.name)
+    // texture in 3d space
+    const sprite3d = new FLAT.TextSprite(texture)
+    sprite3d.setScale(0.003)
     const otherPlayer = new THREE.Group()
     otherPlayer.name =  obj.metadata.name
     otherPlayer.contractAddress = obj.contractAddress;
@@ -473,10 +606,12 @@ class MainScene extends Scene3D {
     const material = new THREE.SpriteMaterial( { map: playerImg } );
     const sprite = new THREE.Sprite( material );
     sprite.position.y = 0.2;
-    const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
+    sprite3d.position.y = 0.8;
+    //const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
     //body.material.invisible = true;
-    otherPlayer.add(body)
+    //otherPlayer.add(body)
     otherPlayer.add(sprite)
+    otherPlayer.add(sprite3d);
     otherPlayer.position.set(2,3,-1)
     otherPlayer.scale.set(0.1,0.1,0.1)
     this.third.add.existing(otherPlayer)
@@ -485,12 +620,7 @@ class MainScene extends Scene3D {
     //this.third.physics.add.existing(otherPlayer)
 
 
-    this.third.physics.add.collider(otherPlayer, this.player, async event => {
-      console.log(`${event}`);
-      if(this.keys.f.isDown){
-        await this.getInfo(otherPlayer);
-      }
-    });
+
 
 
 
@@ -511,7 +641,7 @@ class MainScene extends Scene3D {
       from: this.coinbaseGame,
       type: "movement"
     });
-    await this.sendMessage(topicMovements,msgSend);
+    this.sendMessage(topicMovements,msgSend);
   }
   getPlayerImg = async (metadata) => {
     let playerImg;
@@ -547,7 +677,11 @@ class MainScene extends Scene3D {
   }
   handleMessages = async (msg) => {
     try{
+      //console.log(new TextDecoder().decode(msg.data))
+      //console.log(msg)
+
       const obj = JSON.parse(new TextDecoder().decode(msg.data));
+      //const obj = JSON.parse(msg);
       if(!obj.metadata){
         return
       }
@@ -584,7 +718,34 @@ class MainScene extends Scene3D {
           console.log(`Player ${obj.metadata.name} ${obj.metadata.description} joined`)
         }
       }
+      if(obj.type === "shoot"){
+        if(obj.metadata.name !== this.player.name){
+          const sphere = this.third.physics.add.sphere(
+            { radius: 0.025, x: obj.position.x, y: obj.position.y, z: obj.position.z, mass: 5, bufferGeometry: true },
+            { phong: { color: 0x202020 } }
+          );
+          const force = 5;
+          //sphere.body.applyForce(obj.position.x * force, obj.position.y * force, obj.position.z * force);
+          setTimeout(() => {
+            this.third.destroy(sphere);
+          },2000)
+          sphere.body.on.collision((otherObject, event) => {
+            if (otherObject.name !== 'ground')
+            if(otherObject.name === this.player.name){
+              this.third.physics.destroy(this.player)
 
+              this.player.position.set(2, 3, -1);
+              this.third.destroy(sphere);
+              this.third.physics.add.existing(this.player)
+
+
+            }
+          })
+        }
+      }
+      if(obj.type === "base"){
+        this.mountBase(obj);
+      }
       /*
       if(obj.type === "collision"){
         if(obj.name === this.metadata.name){

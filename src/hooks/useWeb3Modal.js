@@ -100,7 +100,7 @@ function useWeb3Modal(config = {}) {
         setUser(user);
       }).catch(err => {
         console.log(err);
-        logoutOfWeb3Modal();
+        //logoutOfWeb3Modal();
       })
       conn.on('accountsChanged', accounts => {
         const newProvider = new ethers.providers.Web3Provider(conn,"any");

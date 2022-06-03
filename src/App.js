@@ -113,6 +113,8 @@ export default function App () {
     setMetadataPlayer(obj.metadata);
     if(mapHash === "null" || mapTiles === "null"){
       setAttributes3D(obj.metadata,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,mapTiles)
+      setTextInput3D(document.getElementById("textInput"));
+
       setInitialize3d(true);
     } else {
       setAttributes(obj.metadata,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,mapTiles);
@@ -239,7 +241,7 @@ export default function App () {
       room.on('peer joined', (peer) => {
         console.log('Peer joined the room', peer);
         const newConnections = connections + 1;
-        setConnectedUsers(connections);
+        setConnectedUsers(newConnections);
 
       })
 
@@ -275,163 +277,162 @@ export default function App () {
   },[])
 
   return (
-            <center>
+        <center>
 
+          {
+            initialize ?
+            <>
+            {
+              ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
+            }
+            </> :
+            initialize3d ?
+            <>
+            {
+              ipfs &&
+              <>
+              <div>Use WASD, SPACE and your Mouse.<br />Works on mobile and desktop.</div>
+              <IonPhaser ref={gameRef} game={Game3D()}  initialize={initialize3d} metadata={metadataPlayer}/>
+              </>
+            }
+            </> :
+            <>
+            <Header background="brand" align="start">
+              <Heading margin="small">The Vibes Beta</Heading>
+            </Header>
+            <Heading level="2">Play for Fun</Heading>
+            <Box align="center" pad="small">
+              <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
+              <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
+              <Paragraph size="small">
+                This game is offchain and does not sends transactions to blockchain, it uses{' '}
+                <Anchor
+                  target="_blank"
+                  href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
+                  label="IPFS pubsub"
+                />{' '}
+                to allow multiplayer
+              </Paragraph>
+              <Paragraph>Select Space</Paragraph>
+              <Select
+                  options={["TheVibes","CryptoBadRobots","TheVibes3D"]}
+                  value={value}
+                  onChange={({ option }) => {
+                    setValue(option)
+                  }}
+                />
               {
-                initialize ?
-                <>
-                {
-                  ipfs && <IonPhaser ref={gameRef} game={Game} initialize={initialize} metadata={metadataPlayer}/>
-                }
-                </> :
-                initialize3d ?
-                <>
-                {
-                  ipfs &&
-                  <>
-                  <div>Use WASD, SPACE and your Mouse.<br />Works on mobile and desktop.</div>
-                  <IonPhaser ref={gameRef} game={Game3D()}  initialize={initialize3d} metadata={metadataPlayer}/>
-                  </>
-                }
-                </> :
-                <>
-                <Header background="brand" align="start">
-                  <Heading margin="small">The Vibes Beta</Heading>
-                </Header>
-                <Heading level="2">Play for Fun</Heading>
-                <Box align="center" pad="small">
-                  <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
-                  <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
-                  <Paragraph size="small">
-                    This game is offchain and does not sends transactions to blockchain, it uses{' '}
-                    <Anchor
-                      target="_blank"
-                      href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
-                      label="IPFS pubsub"
-                    />{' '}
-                    to allow multiplayer
-                  </Paragraph>
-                  <Paragraph>Select Space</Paragraph>
-                  <Select
-                      options={["TheVibes","CryptoBadRobots","TheVibes3D"]}
-                      value={value}
-                      onChange={({ option }) => {
-                        setValue(option)
-                      }}
-                    />
-                  {
-                    spaces.map(item => {
-                      if(item.name !== value){
-                        return;
-                      }
-                      return(
-                        <Card  height="medium" width="small" background="light-1">
-                          <CardHeader pad="medium"><b>{item.name}</b></CardHeader>
-                          <CardBody pad="small">
-                            <Image alignSelf="center" src={item.image} width="150px"/>
-                            <Paragraph>{item.description}</Paragraph>
-                          </CardBody>
-                          <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                            {
-                              item.uri &&
-                              <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
-                            }
-                            {
-                              item.tilesetURI &&
-                              <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
-                            }
-                          </CardFooter>
-                        </Card>
-                      )
-                    })
+                spaces.map(item => {
+                  if(item.name !== value){
+                    return;
                   }
-                </Box>
-                <Box align="center" pad="medium" alignContent="center">
-                {
-                  !ipfs  && !ipfsErr ?
-                  <>
-                    <Spinner />
-                    <Paragraph>Loading ipfs pubsub ...</Paragraph>
-                  </> :
-                  ipfsErr ?
-                  <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
-                  !coinbase ?
-                  <Box direction="row" alignContent="center" pad="large">
-                  <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+                  return(
+                    <Card  height="medium" width="small" background="light-1">
+                      <CardHeader pad="medium"><b>{item.name}</b></CardHeader>
+                      <CardBody pad="small">
+                        <Image alignSelf="center" src={item.image} width="150px"/>
+                        <Paragraph>{item.description}</Paragraph>
+                      </CardBody>
+                      <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                        {
+                          item.uri &&
+                          <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
+                        }
+                        {
+                          item.tilesetURI &&
+                          <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
+                        }
+                      </CardFooter>
+                    </Card>
+                  )
+                })
+              }
+            </Box>
+            <Box align="center" pad="medium" alignContent="center">
+            {
+              !ipfs  && !ipfsErr ?
+              <>
+                <Spinner />
+                <Paragraph>Loading ipfs pubsub ...</Paragraph>
+              </> :
+              ipfsErr ?
+              <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
+              !coinbase ?
+              <Box direction="row" alignContent="center" pad="large">
+              <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+              <Button primary onClick={() => {
+                setMetadata({
+                  metadata: {
+                    name: `Guest-${Math.random().toString()}`,
+                    image: guests[Math.floor(Math.random()*guests.length)]
+                  },
+                  address: '0x000'
+                })
+              }} label="Enter as Guest" />
+              </Box> :
+              <>
+              <Paragraph style={{wordBreak: 'break-word'}}>Connected as {user ? user.sub : coinbase}</Paragraph>
+              {
+                user &&
+                <Card  height="medium" width="medium" background="light-1" align="center">
+                  <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
+                  <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
+                  <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                    <Button secondary onClick={() => {
+                      setMetadata({
+                        metadata: {
+                          name: user.sub,
+                          image: `https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`
+                        },
+                        address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
+                      })
+                    }} size="small" label="Select" />
+                  </CardFooter>
+                </Card>
+              }
+              </>
+            }
+            {
+
+              loadingMyNFTs && ipfs ?
+              <>
+                <Spinner />
+                <Paragraph>Loading your NFTs ...</Paragraph>
+              </>  :
+              coinbase &&
+              (
+                !graphErr && ipfs ?
+                <>
+                <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
+                </>:
+                ipfs &&
+                <>
+                  <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
                   <Button primary onClick={() => {
                     setMetadata({
                       metadata: {
-                        name: `Guest-${Math.random().toString()}`,
+                        name: `Guest-${Math.round(Math.random()*100000).toString()}`,
                         image: guests[Math.floor(Math.random()*guests.length)]
                       },
                       address: '0x000'
                     })
-                  }} label="Enter as Guest" />
-                  </Box> :
-                  <>
-                  <Paragraph style={{wordBreak: 'break-word'}}>Connected as {user ? user.sub : coinbase}</Paragraph>
-                  {
-                    user &&
-                    <Card  height="medium" width="medium" background="light-1" align="center">
-                      <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
-                      <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
-                      <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                        <Button secondary onClick={() => {
-                          setMetadata({
-                            metadata: {
-                              name: user.sub,
-                              image: `https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`
-                            },
-                            address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
-                          })
-                        }} size="small" label="Select" />
-                      </CardFooter>
-                    </Card>
-                  }
-                  </>
-                }
-                {
-
-                  loadingMyNFTs && ipfs ?
-                  <>
-                    <Spinner />
-                    <Paragraph>Loading your NFTs ...</Paragraph>
-                  </>  :
-                  coinbase &&
-                  (
-                    !graphErr && ipfs ?
-                    <>
-                    <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
-                    </>:
-                    ipfs &&
-                    <>
-                      <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
-                      <Button primary onClick={() => {
-                        setMetadata({
-                          metadata: {
-                            name: `Guest-${Math.round(Math.random()*100000).toString()}`,
-                            image: guests[Math.floor(Math.random()*guests.length)]
-                          },
-                          address: '0x000'
-                        })
-                      }} label="Enter as Guest"/>
-                    </>
-                  )
-
-                }
-                </Box>
+                  }} label="Enter as Guest"/>
                 </>
-              }
-              <Box padding="xlarge" align="center" style={{display: !initialize ? 'none' : 'block'}}>
-                <TextInput
-                  type="text"
-                  id="textInput"
-                  hidden={!initialize}
-                  placeholder="Enter a message and press enter to send ..."
-                />
-              </Box>
-              <FooterComponent style={{display: initialize3d ? 'none' : 'block'}} ipfs={ipfs} connections={connections}  />
+              )
 
-            </center>
+            }
+            </Box>
+            </>
+          }
+          <Box padding="xlarge" align="center" style={{display: (initialize) ? 'block' : 'none'}}>
+            <TextInput
+              type="text"
+              id="textInput"
+              placeholder="Enter a message and press enter to send ..."
+            />
+          </Box>
+          <FooterComponent style={{display: initialize3d ? 'none' : 'block'}} ipfs={ipfs} connections={connections}  />
+
+        </center>
       )
 }

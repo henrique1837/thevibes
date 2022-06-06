@@ -1,6 +1,7 @@
 import chroma from "chroma-js";
 import {
   Scene3D,
+  ExtendedObject3D,
   THREE,
   FLAT,
   JoyStick,
@@ -16,16 +17,18 @@ const gameOrbitDB = '/orbitdb/zdpuAoPQbuca6q6zVVZU4AnTvSm1K2TzKbZLift9bzpodux3Z/
 let topicMovements = 'hash-avatars/games/first-contact/movements';
 
 let metadata;
+let metadatas;
 let coinbaseGame;
 let contractAddress;
 let ipfs;
 let textInput;
 let mapHash = "bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie";
-let mapTiles = "bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm";
+let scale = 1;
 let mapName = "!CL_DEMO_32x32";
 
-export const setAttributes = (mt,cG,cA,r,mH,mN,tM,mT) => {
+export const setAttributes = (mt,mts,cG,cA,r,mH,mN,tM,sC) => {
   metadata = mt
+  metadatas = mts;
   coinbaseGame = cG;
   contractAddress = cA;
   ipfs = r;
@@ -38,8 +41,8 @@ export const setAttributes = (mt,cG,cA,r,mH,mN,tM,mT) => {
   if(tM){
     topicMovements = tM;
   }
-  if(mT){
-    mapTiles = mT;
+  if(sC){
+    scale = sC;
   }
 }
 
@@ -63,7 +66,9 @@ class MainScene extends Scene3D {
     this.peers = [];
     this.otherPlayers = []
     this.friendlyPlayers = [];
+    this.myNfts = metadatas;
     this.info = [];
+    this.armies = [];
   }
 
   preload = async () => {
@@ -83,7 +88,7 @@ class MainScene extends Scene3D {
   }
 
   create = async () => {
-    const {orbitControls} = this.third.warpSpeed('camera', 'sky', 'grid', 'ground', 'light');
+    const {orbitControls} = this.third.warpSpeed('camera', 'sky', '-grid', '-ground', 'light');
     this.orbitControls = orbitControls;
     const room = new Room(this.ipfs, topicMovements);
     room.on('peer joined', (peer) => {
@@ -164,9 +169,10 @@ class MainScene extends Scene3D {
     sprite3d.position.y = 0.8;
     this.player.rotateY(Math.PI + 0.1) // a hack
     //this.player.add(body)
-    this.player.add(sprite)
-    this.player.add(sprite3d)
-    this.player.position.set(2, 3, -1)
+    this.player.add(sprite);
+    this.player.add(sprite3d);
+
+    this.player.position.set(2, 4, -1)
     this.player.scale.set(0.1,0.1,0.1);
     this.playerImg = playerImg;
 
@@ -189,8 +195,9 @@ class MainScene extends Scene3D {
       })
     }
 
-
-
+    if(this.myNfts){
+      this.generatePlayersArmy();
+    }
     /**
      * Add 3rd Person Controls
      */
@@ -198,94 +205,100 @@ class MainScene extends Scene3D {
       offset: new THREE.Vector3(0, 0.2, 0),
       targetRadius: 0.5
     });
-    this.sendMessagePlayerEntered()
+    this.sendMessagePlayerEntered();
+
     window.addEventListener( 'resize', this.onWindowResize );
 
   }
+  generatePlayersArmy = async() => {
+    // Add player's army
+    this.army = [];
+    for(let nft of this.myNfts){
+      if(!nft.metadata){
+        continue
+      }
+      if(!nft.metadata.image){
+        continue
+      }
+      if(nft.metadata.name === this.player.name){
+        return
+      }
+      const nftImg = await this.getPlayerImg(nft.metadata);
+      const material = new THREE.SpriteMaterial( { map: nftImg } );
+      const sprite = new THREE.Sprite( material );
+      sprite.position.y = 0.2;
+      sprite.scale.set(0.1,0.1,0.1);
+      const pos = this.player.position.clone()
+      sprite.position.set(pos.x,pos.y+1,pos.z);
+      this.third.physics.add.existing(sprite);
+      this.third.add.existing(sprite);
+      this.army.push(sprite)
+    }
+  }
+  generateOthersPlayersArmy = async(obj) => {
+    // Add player's army
+    if(!obj.myNfts){
+      return
+    }
+    const army = [];
+    for(let nft of obj.myNfts){
+      if(!nft.metadata){
+        continue
+      }
+      if(!nft.metadata.image){
+        continue
+      }
+      console.log(nft.metadata)
+      const nftImg = await this.getPlayerImg(nft.metadata);
+      const material = new THREE.SpriteMaterial( { map: nftImg } );
+      const sprite = new THREE.Sprite( material );
+      sprite.position.y = 0.2;
+      sprite.scale.set(0.1,0.1,0.1);
+      const pos = obj.position;
+      sprite.position.set(pos.x,pos.y+1,pos.z);
+      this.third.physics.add.existing(sprite);
+      this.third.add.existing(sprite);
+      army.push(sprite)
+    }
+    this.armies[obj.metadata.name] = army;
+    console.log(this.armies[obj.metadata.name])
+    console.log(this.armies)
+  }
   prepareScenario = async () => {
+    const object =  await this.third.load.gltf(`https://infura-ipfs.io/ipfs/${mapHash}/gltf/scene.gltf`);
+    const scene = object.scenes[0]
 
-    /**
-     * Create bridge and vibeslywood
-     */
-     //const bridge = this.generateFromSVG('bridge',{x: 3,y:1,z: 4},50,120);
-     //const vibeslywood = this.generateFromSVG('vibeslywood',{x:12,y:15,z: -100},20,2);
-     //vibeslywood.rotation.set(10)
-    // Create water
+    const book = new ExtendedObject3D()
+    book.name = 'scene'
+    book.add(scene)
+    book.scale.set(scale,scale,scale)
+    this.third.add.existing(book)
 
-
-    const textures = await Promise.all([
-      this.third.load.texture('/assets/water/Water_1_M_Normal.jpg'),
-      this.third.load.texture('/assets/water/Water_2_M_Normal.jpg')
-    ])
-    textures[0].needsUpdate = true
-    textures[1].needsUpdate = true
-    this.third.misc.water({
-      y: 0.05,
-      normalMap0: textures[0],
-      normalMap1: textures[1]
+    // add animations
+    // sadly only the flags animations works
+    object.animations.forEach((anim, i) => {
+      book.mixer = this.third.animationMixers.create(book)
+      // overwrite the action to be an array of actions
+      book.action = []
+      book.action[i] = book.mixer.clipAction(anim)
+      book.action[i].play()
     })
 
-
-    // height map from https://i.stack.imgur.com/NvF5e.jpg
-    const heightmap = await this.third.load.texture('/assets/heightmap/heightmap.png')
-    // Powered by Chroma.js (https://github.com/gka/chroma.js/)
-    const colorScale = chroma
-      .scale(['#003eb2', '#0952c6', '#a49463', '#867645', '#3c6114', '#5a7f32', '#8c8e7b', '#a0a28f', '#ebebeb'])
-      .domain([0,0.1,0.2,0.3,0.4,0.5,0.6,0.8,0.9,1])
-    const mesh = this.third.heightMap.add(heightmap,{ colorScale })
-    if (mesh) {
-      // add custom material or a texture
-      //mesh.material = new THREE.MeshPhongMaterial({ map: grass })
-      mesh.name = "WorldGround"
-      // we position, scale, rotate etc. the mesh before adding physics to it
-      mesh.scale.set(2, 2,1)
-      mesh.position.set(0,0,0);
-      // @ts-ignore
-      this.third.physics.add.existing(mesh,{collisionFlags:1});
-
-    }
-    /*
-    "Low Poly Office Building 1" (https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270#download)
-     by Kendy2008
-     is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
-
-    this.renderFBX('/assets/fbx/Office_1.fbx',{x:0.01,y:0.01,z:0.01},{x:-0.5,y:5,z:-1},1)
-    this.renderFBX('/assets/fbx/PowerPlant.fbx',{x:0.01,y:0.01,z:0.01},{x:2,y:5,z:2},1);
-    this.renderFBX('/assets/fbx/WaterProcessing.fbx',{x:0.01,y:0.01,z:0.01},{x:5.5,y:5,z:2.3},1)
-
-    this.renderFBX('/assets/fbx/Office_3.fbx',{x:0.01,y:0.01,z:0.01},{x:-1,y:5,z:1},1);
-    */
-    /*
-    https://godgoldfear.itch.io/low-poly-trees
-
-    this.renderFBX('/assets/fbx/tree/Tree1.fbx',{x:0.06,y:0.06,z:0.06},{x:-4,y:5,z:-1},1)
-    this.renderFBX('/assets/fbx/tree/Tree2.fbx',{x:0.06,y:0.06,z:0.06},{x:-2,y:5,z:-4},1)
-    this.renderFBX('/assets/fbx/tree/Tree3.fbx',{x:0.06,y:0.06,z:0.06},{x:-2,y:5,z:-2},1)
-    this.renderFBX('/assets/fbx/tree/Tree4.fbx',{x:0.06,y:0.06,z:0.06},{x:0,y:5,z:-3},1)
-    this.renderFBX('/assets/fbx/tree/Tree5.fbx',{x:0.06,y:0.06,z:0.06},{x:-1,y:5,z:-1},1)
-    */
-
-  }
-
-  renderFBX = async (file,scale,pos,max) => {
-    const object = await this.third.load.fbx(file)
-    for(let i=0;i<max;i++){
-      const house = new THREE.Group()
-      house.rotateY(Math.PI + 0.1) // a hack
-      house.add(object)
-      house.scale.set(scale.x,scale.y,scale.z)
-      house.position.set(pos.x+(i*5),pos.y,pos.z+(i*3));
-
-      this.third.physics.add.existing(house,{
-        shape: 'box',
-        width:50,
-        mass:100
-      })
-      this.third.add.existing(house)
-
-      house.body.setFriction(1)
-      house.body.setAngularFactor(0, 0, 0)
-    }
+    book.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = child.receiveShadow = false
+        child.material.metalness = 0
+        child.material.roughness = 1
+        this.third.physics.add.existing(child, {
+          shape: 'concave',
+          mass: 0,
+          collisionFlags: 1,
+          autoCenter: false
+        })
+        child.body.setAngularFactor(0, 0, 0)
+        child.body.setLinearFactor(0, 0, 0)
+      }
+    })
   }
   prepareControls = () => {
 
@@ -298,6 +311,7 @@ class MainScene extends Scene3D {
       d: this.input.keyboard.addKey('d'),
       s: this.input.keyboard.addKey('s'),
       f: this.input.keyboard.addKey('f'),
+      s: this.input.keyboard.addKey('s'),
       space: this.input.keyboard.addKey(32),
       enter: this.input.keyboard.addKey(13)
     }
@@ -393,7 +407,7 @@ class MainScene extends Scene3D {
     // create text texture
     let text = `${player.metadata.name} base demo`;
     let texture = new FLAT.TextTexture(`${text}`,{color: "black"});
-    
+
     // texture in 3d space
     let sprite3d = new FLAT.TextSprite(texture)
     sprite3d.position.y = 0.5;
@@ -405,7 +419,7 @@ class MainScene extends Scene3D {
       image = await this.getPlayerImg(player.metadata);
     }
     const textureCube = this.third.misc.textureCube([image,image,image,image,image,image])
-    const body = this.third.add.box({ 
+    const body = this.third.add.box({
       width: 0.5,
       height: 0.15,
       depth: 0.5
@@ -418,7 +432,7 @@ class MainScene extends Scene3D {
     if(player.metadata.description){
       text = `${player.metadata.description}`;
       texture = new FLAT.TextTexture(`${text}`);
-      
+
       // texture in 3d space
       sprite3d = new FLAT.TextSprite(texture)
       sprite3d.position.y = 0.4;
@@ -465,10 +479,9 @@ class MainScene extends Scene3D {
     const raycaster = new THREE.Raycaster()
     const x = 0
     const y = 0
-    const force = 5
     const pos = new THREE.Vector3()
 
-    raycaster.setFromCamera({ x, y }, this.third.camera)
+    raycaster.setFromCamera({ x, y}, this.third.camera)
 
     pos.copy(raycaster.ray.direction)
     pos.add(raycaster.ray.origin)
@@ -523,7 +536,10 @@ class MainScene extends Scene3D {
           y = this.player.body.velocity.y,
           z = Math.cos(theta) * speed
 
-        this.player.body.setVelocity(x, y, z)
+        this.player.body.setVelocity(x, y, z);
+        this.army.map(nft => {
+          nft.body.setVelocity(x,y,z)
+        })
       }
 
 
@@ -573,7 +589,27 @@ class MainScene extends Scene3D {
       // mount base
       if (this.keys.a.isDown) {
         this.getInfo(this.player);
-        //this.shoot();
+      }
+      if (this.keys.s.isDown) {
+        this.army.map(nft => {
+          this.third.physics.destroy(nft)
+          const pos = this.player.position.clone();
+          nft.position.set(pos.x,pos.y+1,pos.z);
+          this.third.physics.add.existing(nft);
+        })
+      }
+      if(this.player.position.y < - 10){
+        this.third.physics.destroy(this.player)
+        if(this.info[this.player.metadata.name]){
+          const base = this.info[this.player.metadata.name];
+          const pos = base.position.clone();
+          this.player.position.set(pos.x,pos.y+2,pos.z);
+
+        } else {
+          this.player.position.set(2, 4, -1);
+        }
+        this.third.physics.add.existing(this.player);
+
       }
     }
   }
@@ -626,11 +662,9 @@ class MainScene extends Scene3D {
     //otherPlayer.add(body)
     otherPlayer.add(sprite)
     otherPlayer.add(sprite3d);
-    otherPlayer.position.set(2,3,-1)
+    otherPlayer.position.set(2,4,-1)
     otherPlayer.scale.set(0.1,0.1,0.1)
     this.third.add.existing(otherPlayer)
-
-
     //this.third.physics.add.existing(otherPlayer)
 
 
@@ -656,6 +690,21 @@ class MainScene extends Scene3D {
       type: "movement"
     });
     this.sendMessage(topicMovements,msgSend);
+    if(this.myNfts.length > 0){
+      msgSend = JSON.stringify({
+        metadata: this.metadata,
+        contractAddress: this.contractAddress,
+        player: this.player,
+        velocity: this.player.body.velocity,
+        position: this.player.body.position,
+        from: this.coinbaseGame,
+        myNfts: this.myNfts,
+        type: "army"
+      });
+      this.sendMessage(topicMovements,msgSend);
+    }
+
+    return(otherPlayer);
   }
   getPlayerImg = async (metadata) => {
     let playerImg;
@@ -699,14 +748,25 @@ class MainScene extends Scene3D {
       if(!obj.metadata){
         return
       }
+      const third = this.third;
+      const armies = this.armies
       if(obj.type === "movement" && obj.metadata.name !== this.player.name){
 
         let added = false;
         this.otherPlayers.forEach(function (otherPlayer) {
 
           if (obj.metadata.name === otherPlayer.name && obj.contractAddress === otherPlayer.contractAddress) {
+            //third.physics.destroy(otherPlayer);
+            otherPlayer.position.set(obj.position.x,obj.position.y,obj.position.z);
+            //third.physics.add.existing(otherPlayer);
+            if(armies){
+              armies.map(nft => {
+                third.physics.destroy(nft);
+                nft.position.set(obj.position.x,obj.position.y+2,obj.position.z);
+                third.physics.add.existing(nft);
+              })
+            }
 
-            otherPlayer.position.set(obj.position.x,obj.position.y,obj.position.z)
             /*
             otherPlayer.velocity.set(obj.velocity.x,obj.velocity.y,obj.velocity.z)
             if(obj.velocity.x === 0 && obj.velocity.y === 0 && obj.velocity.z === 0 ){
@@ -746,17 +806,33 @@ class MainScene extends Scene3D {
           if (otherObject.name !== 'ground')
           if(otherObject.name === this.player.name){
             this.third.physics.destroy(this.player)
+            if(this.info[this.player.metadata.name]){
+              const base = this.info[this.player.metadata.name];
+              const pos = base.position.clone();
+              this.player.position.set(pos.x,pos.y+2,pos.z);
 
-            this.player.position.set(2, 2, -1);
+            } else {
+              this.player.position.set(2, 4, -1);
+            }
             this.third.destroy(sphere);
             this.third.physics.add.existing(this.player)
+            this.army.map(nft => {
+              this.third.physics.destroy(nft)
+              const pos = this.player.position.clone();
+              nft.position.set(pos.x,pos.y+1,pos.z);
+              this.third.physics.add.existing(nft);
 
+            })
 
           }
         })
       }
       if(obj.type === "base"){
         this.mountBase(obj);
+      }
+      if(obj.type === "army"){
+        console.log(obj)
+        this.generateOthersPlayersArmy(obj);
       }
       /*
       if(obj.type === "message"){

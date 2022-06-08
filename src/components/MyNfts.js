@@ -4,7 +4,6 @@ import {
   Box,
   Heading,
   Image,
-  Paragraph,
   Card,
   CardHeader,
   CardBody,
@@ -39,7 +38,7 @@ export default function MyNfts (props) {
             uri = tokenURI
           }
           return(
-            <Card  height="medium" width="small" background="light-1" align="center">
+            <Card key={`${obj.address}_${obj.metadata.name}`} height="medium" width="small" background="light-1" align="center">
               <CardHeader pad="medium"><b>{obj.metadata.name}</b></CardHeader>
               <CardBody pad="small"><Image alignSelf="center" src={uri} width="150px"/></CardBody>
               <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
@@ -72,7 +71,7 @@ export default function MyNfts (props) {
             uri = tokenURI
           }
           return(
-            <Card  height="medium" width="small" background="light-1">
+            <Card key={`${obj.address}_${obj.metadata.name}`} height="medium" width="small" background="light-1">
               <CardHeader pad="medium"><b>{obj.metadata.name}</b></CardHeader>
               <CardBody pad="small"><Image alignSelf="center" src={uri} width="150px"/></CardBody>
               <CardFooter pad={{horizontal: "large"}} background="light-2" align="center" alignContent="center">

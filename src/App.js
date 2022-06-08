@@ -62,7 +62,6 @@ export default function App () {
   const {mapHash,mapName,spaceName,mapTiles} = useParams();
   const navigate = useNavigate();
 
-  const [msgs,setMsgs] = useState([]);
   const [myOwnedNfts,setMyOwnedNfts] = useState();
   const [myOwnedERC1155,setMyOwnedERC1155] = useState();
 
@@ -73,9 +72,7 @@ export default function App () {
   const [initialize, setInitialize] = useState(false);
   const [initialize3d, setInitialize3d] = useState(false);
 
-  const [subscribed,setSubscribed] = useState();
   const [connections,setConnectedUsers] = useState(0);
-  //const [peers,setPeers] = useState(0);
 
   const guests = [
     'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF',
@@ -97,7 +94,7 @@ export default function App () {
       description: "We are Crypto Bad Bots, the new civilization of the world! 🌎🤖",
       path: "/badrobots-v0",
       uri: "https://cryptobadrobots-crypto.ipns.dweb.link/",
-      tilesetURI: "https://szadiart.itch.io/postapo-lands-demo"
+      tilesetURI: "https://sketchfab.com/3d-models/ruined-city-c82b395bb6b44427a1f379f54e106845"
     },
     {
       name: "TheVibes3D",
@@ -162,7 +159,6 @@ export default function App () {
           } else {
             uri = tokenURI;
           }
-          console.log(tokenURI)
           let metadataToken;
           if(tokenURI.includes("data:application/json;base64")){
             metadataToken = JSON.parse(atob(tokenURI.replace("data:application/json;base64,","")));
@@ -196,7 +192,7 @@ export default function App () {
     if(value === "TheVibes"){
       navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
     } else if(value === "CryptoBadRobots"){
-      navigate("/destruction/bafkreig2opzec3rhplcedyztvorfuls3cqjx3qj3gtrbhemzipf52tm5za/bafkreihakwnufz66i2nmbh3qr7jiri3ulhqwpsc2gimsqzypl4arsuyway/badrobots-v0")
+      navigate("/null/bafybeifa3e4hjhrboeodh5piw6r2ufouks5y5mri3trpe5x7fmxm6p5ulm/1/badrobots-v0")
     } else if(value === "TheVibes3D"){
       navigate("/null/bafybeiho6f7gewdwolfnhuqzkxi2vlla3p6o4qwvzo4ovto434b3bwf7l4/0.1/theSpace3d-v0")
     } else if(value === "ColorNGhosts"){
@@ -250,7 +246,7 @@ export default function App () {
     }
   },[client,coinbase,myOwnedNfts,netId]);
   useMemo(async () => {
-    if(ipfs && !subscribed){
+    if(ipfs){
       const id = await ipfs.id();
       console.log(await ipfs.swarm.peers())
 
@@ -286,7 +282,7 @@ export default function App () {
 
     }
 
-  },[ipfs,msgs,subscribed]);
+  },[ipfs]);
 
   useEffect(()=>{
     window.addEventListener('keydown', async event => {

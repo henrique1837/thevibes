@@ -32,6 +32,8 @@ export default function MyNfts (props) {
           let uri;
           if(!tokenURI.includes("://") && !tokenURI.includes("data:image/svg+xml;base64,")){
             uri = `https://ipfs.io/ipfs/${tokenURI}`;
+          } else if(tokenURI.includes("ipfs://ipfs/")){
+            uri = tokenURI.replace("ipfs://ipfs/","https://ipfs.io/ipfs/");
           } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           } else{
@@ -65,6 +67,8 @@ export default function MyNfts (props) {
           let uri;
           if(!tokenURI.includes("://")){
             uri = `https://ipfs.io/ipfs/${tokenURI}`;
+          } else if(tokenURI.includes("ipfs://ipfs/")){
+            uri = tokenURI.replace("ipfs://ipfs/","https://ipfs.io/ipfs/");
           } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           } else {

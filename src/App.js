@@ -22,10 +22,13 @@ import {
   useParams
 } from 'react-router-dom';
 
+import makeBlockie from 'ethereum-blockies-base64';
+
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
 import Room from 'ipfs-pubsub-room';
+import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx'
 
 import Game from './Game';
 import Game3D from './Game3D';
@@ -73,7 +76,7 @@ export default function App () {
   const [initialize3d, setInitialize3d] = useState(false);
 
   const [connections,setConnectedUsers] = useState(0);
-
+  const [profile,setProfile] = useState();
   const guests = [
     'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF',
     'ipfs://bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy'
@@ -152,6 +155,8 @@ export default function App () {
           }
           if(!tokenURI.includes("://")){
             uri = `https://ipfs.io/ipfs/${tokenURI}`;
+          } else if(tokenURI.includes("ipfs://ipfs/")){
+            uri = tokenURI.replace("ipfs://ipfs/","https://ipfs.io/ipfs/");
           } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
             uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           } else if(tokenURI.includes("data:application/json;base64")) {
@@ -236,7 +241,6 @@ export default function App () {
           const newMyOwnedERC1155 = await Promise.all(promises)
           setMyOwnedERC1155(newMyOwnedERC1155);
         }
-
         setLoadingMyNFTs(false);
       } catch(err){
         console.log(err)
@@ -245,6 +249,13 @@ export default function App () {
       }
     }
   },[client,coinbase,myOwnedNfts,netId]);
+  useMemo(async () => {
+    if(coinbase){
+      // Load the account link based on the account ID
+      const newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
+      setProfile(newProfile);
+    }
+  },[coinbase])
   useMemo(async () => {
     if(ipfs){
       const id = await ipfs.id();
@@ -391,9 +402,16 @@ export default function App () {
               }} label="Enter as Guest" />
               </Box> :
               <>
-              <Paragraph style={{wordBreak: 'break-word'}}>Connected as {user ? user.sub : coinbase}</Paragraph>
+              <Paragraph style={{wordBreak: 'break-word'}}>
+                Connected as {user ? user.sub : profile ? profile.name : coinbase}
+              </Paragraph>
+              <Paragraph>
               {
-                user &&
+                !user && profile.description
+              }
+              </Paragraph>
+              {
+                user ?
                 <Card  height="medium" width="medium" background="light-1" align="center">
                   <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
                   <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
@@ -407,6 +425,32 @@ export default function App () {
                         address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
                       })
                     }} size="small" label="Select" />
+                  </CardFooter>
+                </Card> :
+                profile &&
+                <Card  height="medium" width="medium" background="light-1" align="center">
+                  <CardHeader pad="medium"><b>{profile.name}</b></CardHeader>
+                  <CardBody pad="small">
+                    <Image alignSelf="center" src={
+                      profile.image ?
+                      profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+                      makeBlockie(coinbase)
+                    } width="250px"/>
+                  </CardBody>
+                  <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                    <Button secondary onClick={() => {
+                      setMetadata({
+                        metadata: {
+                          name: profile.name ? profile.name : coinbase,
+                          description: profile.description,
+                          image: profile.image ?
+                                 profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+                                 makeBlockie(coinbase),
+                          external_url: profile.url
+                        },
+                        address: coinbase
+                      })
+                    }} size="small" label="Play using Self.ID" />
                   </CardFooter>
                 </Card>
               }

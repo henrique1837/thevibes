@@ -13,7 +13,7 @@ import {
 import Room from 'ipfs-pubsub-room';
 
 
-const gameOrbitDB = '/orbitdb/zdpuAoPQbuca6q6zVVZU4AnTvSm1K2TzKbZLift9bzpodux3Z/TheVibes3D Assets';
+const gameOrbitDB = '/orbitdb/zdpuB2NzfJc6kHd6dJikZYzXx3PMvxYTsRKAHvqN9mFMsEpVP/test';
 let topicMovements = 'hash-avatars/games/first-contact/movements';
 
 let metadata;
@@ -698,7 +698,11 @@ class MainScene extends Scene3D {
         const blob = new Blob([image_data], { type: 'image/svg+xml' });
         url = URL.createObjectURL(blob);
       } else {
-        url = metadata.image.replace("ipfs://","https://ipfs.io/ipfs/")
+        if(metadata.image.includes("ipfs://ipfs/")){
+          url = metadata.image.replace("ipfs://ipfs/","https://ipfs.io/ipfs/");
+        } else {
+          url = metadata.image.replace("ipfs://","https://ipfs.io/ipfs/")
+        }
       }
       playerImg = await this.third.load.texture(url);
     } else {

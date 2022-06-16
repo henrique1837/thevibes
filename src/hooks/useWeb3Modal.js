@@ -8,10 +8,9 @@ import UAuthSPA from '@uauth/js';
 // UNS Login Integration
 // These options are used to construct the UAuthSPA instance.
 const uauthOptions: IUAuthOptions = {
-  clientID: 'fkQeD1BJWhUToHhWOW1BeitZe79hoOPnulmHWyiY6l4=',
-  clientSecret: 'kvj2DDayF32xBWWdrFll/VFeWVgOFyYIkifEy7RakiA=',
-  redirectUri: 'http://localhost:3000/callback',
-  //redirectUri: 'https://dweb.link/ipns/thevibes-space.crypto/callback',
+  clientID: '401fd997-54d9-4462-b049-3e87cb30b981',
+  redirectUri: 'https://thevibes--space-crypto.ipns.dweb.link/',
+  //redirectUri: 'http://127.0.0.1:3000',
   // Must include both the openid and wallet scopes.
   scope: 'openid wallet',
 }
@@ -101,7 +100,7 @@ function useWeb3Modal(config = {}) {
         setUser(user);
       }).catch(err => {
         console.log(err);
-        logoutOfWeb3Modal();
+        //logoutOfWeb3Modal();
       })
       conn.on('accountsChanged', accounts => {
         const newProvider = new ethers.providers.Web3Provider(conn,"any");

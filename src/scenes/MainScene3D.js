@@ -22,11 +22,11 @@ let coinbaseGame;
 let contractAddress;
 let ipfs;
 let textInput;
-let mapHash = "bafybeiflup6dpz7wcqdi5k7u43pb722ietk3tlr2iknip635p3r4gg2sie";
+let mapHash;
 let scale = 1;
-let mapName = "!CL_DEMO_32x32";
+let idx;
 
-export const setAttributes = (mt,mts,cG,cA,r,mH,mN,tM,sC) => {
+export const setAttributes = (mt,mts,cG,cA,r,mH,IDX,tM,sC) => {
   metadata = mt
   metadatas = mts;
   coinbaseGame = cG;
@@ -35,8 +35,8 @@ export const setAttributes = (mt,mts,cG,cA,r,mH,mN,tM,sC) => {
   if(mH){
     mapHash = mH;
   }
-  if(mN){
-    mapName = mN;
+  if(IDX){
+    idx = IDX;
   }
   if(tM){
     topicMovements = tM;
@@ -63,11 +63,11 @@ class MainScene extends Scene3D {
     this.coinbaseGame = coinbaseGame;
     this.contractAddress = contractAddress;
     this.totalPlayers = 0;
+    this.idx = idx;
     this.peers = [];
     this.otherPlayers = []
     this.friendlyPlayers = [];
     this.myNfts = metadatas.filter(mt => {
-      console.log(mt)
       if(!mt){
         return
       }
@@ -122,9 +122,16 @@ class MainScene extends Scene3D {
     await this.generatePlayer();
     this.prepareControls();
     room.on('message',this.handleMessages);
-
+    if(this.idx){
+      // Need to read doc, cant set ... need to include protocol to get dids that connected to the space in the past
+      const base = await this.idx.get(topicMovements);
+      console.log(base)
+      if(base){
+        this.mountBase(base);
+      }
+    }
     this.ready = true;
-    /* Create OrbitDB instance
+    /* Create OrbitDB instance -> Change for js-waku storage nodes
     OrbitDB.createInstance(ipfs)
     .then(async orbitdb => {
       const db = await orbitdb.keyvalue(gameOrbitDB);
@@ -386,6 +393,11 @@ class MainScene extends Scene3D {
     let image;
     if(player.metadata.name === this.player.name){
       image = this.playerImg;
+      if(this.idx){
+        // Need to read doc, cant set ... need to include protocol to get dids that connected to the space in the past
+        const id = await this.idx.set(topicMovements,player);
+        console.log(id);
+      }
     } else {
       image = await this.getPlayerImg(player.metadata);
     }

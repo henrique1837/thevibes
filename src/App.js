@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useMemo, useRef } from 'react'
+import React, { useState, useEffect,useMemo, useRef,useCallback } from 'react'
 import { IonPhaser } from '@ion-phaser/react'
 import {
   Button,
@@ -14,7 +14,10 @@ import {
   CardBody,
   CardHeader,
   CardFooter,
-  Image
+  Image,
+  Tab,
+  Tabs,
+  Grid
  } from 'grommet';
 
 import {
@@ -27,6 +30,7 @@ import makeBlockie from 'ethereum-blockies-base64';
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
+import authenticateWithEthereum from './hooks/useIDX.js';
 import Room from 'ipfs-pubsub-room';
 import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx'
 
@@ -48,9 +52,11 @@ export default function App () {
   const [graphErr,setGraphErr] = useState();
   const gameRef = useRef(null);
   const {
+    provider,
     coinbase,
     netId,
     loadWeb3Modal,
+    logoutOfWeb3Modal,
     user
   } = useWeb3Modal();
 
@@ -77,6 +83,10 @@ export default function App () {
 
   const [connections,setConnectedUsers] = useState(0);
   const [profile,setProfile] = useState();
+  const [connectingIDX,setConnectingIDX] = useState(false);
+  const [idx,setIDX] = useState();
+
+
   const guests = [
     'ipfs://QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF',
     'ipfs://bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy'
@@ -126,7 +136,7 @@ export default function App () {
         nfts = myOwnedNfts.concat(myOwnedERC1155);
       }
       const scale = mapTiles;
-      setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,mapName,spaceName,scale)
+      setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,idx,spaceName,scale)
       setTextInput3D(document.getElementById("textInput"));
       setInitialize3d(true);
     } else {
@@ -180,6 +190,26 @@ export default function App () {
       })
     )
   }
+
+  const connectIDX = useCallback(async () => {
+    if(provider && coinbase){
+      try{
+        setConnectingIDX(true);
+        const newIDX = await authenticateWithEthereum(provider.provider,coinbase);
+        setIDX(newIDX)
+        let newProfile = await newIDX.get('basicProfile');
+        if(!newProfile){
+          newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
+        }
+        console.log(newProfile)
+        setProfile(newProfile);
+        setConnectingIDX(false);
+      } catch(err){
+        console.log(err)
+        setConnectingIDX(false);
+      }
+    }
+  },[provider,coinbase]);
 
   useMemo(() => {
     if(spaceName === "thevibes-space-game-v0"){
@@ -249,13 +279,7 @@ export default function App () {
       }
     }
   },[client,coinbase,myOwnedNfts,netId]);
-  useMemo(async () => {
-    if(coinbase){
-      // Load the account link based on the account ID
-      const newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
-      setProfile(newProfile);
-    }
-  },[coinbase])
+
   useMemo(async () => {
     if(ipfs){
       const id = await ipfs.id();
@@ -330,162 +354,214 @@ export default function App () {
             <>
             <Header background="brand" align="start">
               <Heading margin="small">The Vibes Beta</Heading>
+              <Box align="end" pad="medium" alignContent="center" >
+                {
+                  coinbase ?
+                  <Button onClick={() => {
+                    logoutOfWeb3Modal();
+                    setIDX();
+                    setProfile();
+                  }} label="Disconnect" /> :
+                  <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+                }
+              </Box>
             </Header>
             <Heading level="2">Play for Fun</Heading>
-            <Box align="center" pad="small">
-              <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
-              <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
-              <Paragraph size="small">
-                This game is offchain and does not sends transactions to blockchain, it uses{' '}
-                <Anchor
-                  target="_blank"
-                  href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
-                  label="IPFS pubsub"
-                />{' '}
-                to allow multiplayer
-              </Paragraph>
-              <Paragraph>Select Space</Paragraph>
-              <Select
-                  options={["TheVibes","CryptoBadRobots","TheVibes3D","ColorNGhosts"]}
-                  value={value}
-                  onChange={({ option }) => {
-                    setValue(option)
-                  }}
-                />
-              {
-                spaces.map(item => {
-                  if(item.name !== value){
-                    return;
+            <Tabs>
+              <Tab title="Play">
+                <Box align="center" pad="medium" alignContent="center" >
+                  <Select
+                      options={["TheVibes","CryptoBadRobots","TheVibes3D","ColorNGhosts"]}
+                      value={value}
+                      onChange={({ option }) => {
+                        setValue(option)
+                      }}
+                    />
+                  <Box alignContent="center" align="center" pad="medium" direction="row-responsive">
+                    {
+                      spaces.map(item => {
+                        if(item.name !== value){
+                          return;
+                        }
+                        return(
+                          <>
+                          <Image pad="medium" alignSelf="center" src={item.image} width="150px"/>
+                          <Box pad="medium">
+                            <Paragraph>{item.description}</Paragraph>
+                            <Box alignSelf="center" direction="row" gap="xlarge">
+                            {
+                              item.uri &&
+                              <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
+                            }
+                            {
+                              item.tilesetURI &&
+                              <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
+                            }
+                            </Box>
+
+                          </Box>
+                          </>
+                        )
+                      })
+                    }
+                  </Box>
+                  {
+                    !ipfs  && !ipfsErr ?
+                    <>
+                      <Spinner />
+                      <Paragraph>Loading ipfs pubsub ...</Paragraph>
+                    </> :
+                    ipfsErr ?
+                    <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
+                    !coinbase ?
+                    <Box direction="row" alignContent="center" pad="large">
+                    <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+                    <Button primary onClick={() => {
+                      setMetadata({
+                        metadata: {
+                          name: `Guest-${Math.random().toString()}`,
+                          image: guests[Math.floor(Math.random()*guests.length)]
+                        },
+                        address: '0x000'
+                      })
+                    }} label="Enter as Guest" />
+                    </Box> :
+                    <>
+                    <Paragraph style={{wordBreak: 'break-word'}}>
+                      Connected as {user ? user.sub : profile?.name ? profile.name : coinbase}
+                    </Paragraph>
+                    {
+                      !user && !idx && !connectingIDX && coinbase &&
+                      <Box pad="xxsmall">
+                        <Button secondary onClick={connectIDX} label="Connect Self.id" size="small"/>
+                        <Paragraph size="small">Use this option to play with your <Anchor href={`https://clay.self.id`} target="_blank" size="xxsmall" label="Self.ID" /></Paragraph>
+                      </Box>
+                    }
+                    {
+                      connectingIDX &&
+                      <Spinner />
+                    }
+                    <Paragraph>
+                    {
+                      !user && profile?.description
+                    }
+                    </Paragraph>
+                    {
+                      idx && coinbase && !connectingIDX &&
+                      <>
+                      <Paragraph>
+                        <small>Edit your profile at <Anchor href={`https://clay.self.id/${idx.id}`} target="_blank" size="small" label="Self.ID" /></small>
+                      </Paragraph>
+                      <Button onClick={async () => {
+                        try{
+                          let newProfile = await idx.get('basicProfile');
+                          if(!newProfile){
+                            newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
+                          }
+                          console.log(newProfile)
+                          setProfile(newProfile);
+                        } catch(err){
+                          console.log(err)
+                        }
+                      }} secondary label="Reload Profile" size="xsmall"/>
+
+                      </>
+                    }
+                    {
+                      user ?
+                      <Card  height="medium" width="medium" background="light-1" align="center">
+                        <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
+                        <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
+                        <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                          <Button secondary onClick={() => {
+                            setMetadata({
+                              metadata: {
+                                name: user.sub,
+                                image: `https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`
+                              },
+                              address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
+                            })
+                          }} size="small" label="Select" />
+                        </CardFooter>
+                      </Card> :
+                      profile &&
+                      <Card  height="medium" width="medium" background="light-1" align="center">
+                        <CardHeader pad="medium"><b>{profile.name}</b></CardHeader>
+                        <CardBody pad="small">
+                          <Image alignSelf="center" src={
+                            profile.image ?
+                            profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+                            makeBlockie(coinbase)
+                          } width="250px"/>
+                        </CardBody>
+                        <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+                          <Button secondary onClick={() => {
+                            setMetadata({
+                              metadata: {
+                                name: profile.name ? profile.name : coinbase,
+                                description: profile.description,
+                                image: profile.image ?
+                                       profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+                                       makeBlockie(coinbase),
+                                external_url: profile.url
+                              },
+                              address: coinbase
+                            })
+                          }} size="small" label="Play using Self.ID" />
+                        </CardFooter>
+                      </Card>
+                    }
+                    </>
                   }
-                  return(
-                    <Card  height="medium" width="small" background="light-1">
-                      <CardHeader pad="medium"><b>{item.name}</b></CardHeader>
-                      <CardBody pad="small">
-                        <Image alignSelf="center" src={item.image} width="150px"/>
-                        <Paragraph>{item.description}</Paragraph>
-                      </CardBody>
-                      <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                        {
-                          item.uri &&
-                          <Anchor href={item.uri} target="_blank" size="small" label="Visit Dapp" />
-                        }
-                        {
-                          item.tilesetURI &&
-                          <Anchor href={item.tilesetURI} target="blank" size="small" label="Tileset" />
-                        }
-                      </CardFooter>
-                    </Card>
-                  )
-                })
-              }
-            </Box>
-            <Box align="center" pad="medium" alignContent="center">
-            {
-              !ipfs  && !ipfsErr ?
-              <>
-                <Spinner />
-                <Paragraph>Loading ipfs pubsub ...</Paragraph>
-              </> :
-              ipfsErr ?
-              <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
-              !coinbase ?
-              <Box direction="row" alignContent="center" pad="large">
-              <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
-              <Button primary onClick={() => {
-                setMetadata({
-                  metadata: {
-                    name: `Guest-${Math.random().toString()}`,
-                    image: guests[Math.floor(Math.random()*guests.length)]
-                  },
-                  address: '0x000'
-                })
-              }} label="Enter as Guest" />
-              </Box> :
-              <>
-              <Paragraph style={{wordBreak: 'break-word'}}>
-                Connected as {user ? user.sub : profile ? profile.name : coinbase}
-              </Paragraph>
-              <Paragraph>
-              {
-                !user && profile.description
-              }
-              </Paragraph>
-              {
-                user ?
-                <Card  height="medium" width="medium" background="light-1" align="center">
-                  <CardHeader pad="medium"><b>{user.sub}</b></CardHeader>
-                  <CardBody pad="small"><Image alignSelf="center" src={`https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`} width="250px"/></CardBody>
-                  <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                    <Button secondary onClick={() => {
-                      setMetadata({
-                        metadata: {
-                          name: user.sub,
-                          image: `https://metadata.unstoppabledomains.com/image-src/${user.sub}.svg`
-                        },
-                        address: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f'
-                      })
-                    }} size="small" label="Select" />
-                  </CardFooter>
-                </Card> :
-                profile &&
-                <Card  height="medium" width="medium" background="light-1" align="center">
-                  <CardHeader pad="medium"><b>{profile.name}</b></CardHeader>
-                  <CardBody pad="small">
-                    <Image alignSelf="center" src={
-                      profile.image ?
-                      profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
-                      makeBlockie(coinbase)
-                    } width="250px"/>
-                  </CardBody>
-                  <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-                    <Button secondary onClick={() => {
-                      setMetadata({
-                        metadata: {
-                          name: profile.name ? profile.name : coinbase,
-                          description: profile.description,
-                          image: profile.image ?
-                                 profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
-                                 makeBlockie(coinbase),
-                          external_url: profile.url
-                        },
-                        address: coinbase
-                      })
-                    }} size="small" label="Play using Self.ID" />
-                  </CardFooter>
-                </Card>
-              }
-              </>
-            }
-            {
+                  {
 
-              loadingMyNFTs && ipfs ?
-              <>
-                <Spinner />
-                <Paragraph>Loading your NFTs ...</Paragraph>
-              </>  :
-              coinbase &&
-              (
-                !graphErr && ipfs ?
-                <>
-                <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
-                </>:
-                ipfs &&
-                <>
-                  <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
-                  <Button primary onClick={() => {
-                    setMetadata({
-                      metadata: {
-                        name: `Guest-${Math.round(Math.random()*100000).toString()}`,
-                        image: guests[Math.floor(Math.random()*guests.length)]
-                      },
-                      address: '0x000'
-                    })
-                  }} label="Enter as Guest"/>
-                </>
-              )
+                    loadingMyNFTs && ipfs ?
+                    <>
+                      <Spinner />
+                      <Paragraph>Loading your NFTs ...</Paragraph>
+                    </>  :
+                    coinbase &&
+                    (
+                      !graphErr && ipfs ?
+                      <>
+                      <MyNfts myOwnedERC1155={myOwnedERC1155} myOwnedNfts={myOwnedNfts} setMetadata={setMetadata} />
+                      </>:
+                      ipfs &&
+                      <>
+                        <Paragraph>Sorry! Could not load your NFTs (subgraph can be syncing), try changing network or enter as guest.</Paragraph>
+                        <Button primary onClick={() => {
+                          setMetadata({
+                            metadata: {
+                              name: `Guest-${Math.round(Math.random()*100000).toString()}`,
+                              image: guests[Math.floor(Math.random()*guests.length)]
+                            },
+                            address: '0x000'
+                          })
+                        }} label="Enter as Guest"/>
+                      </>
+                    )
 
-            }
-            </Box>
+                  }
+                </Box>
+              </Tab>
+              <Tab title="Information">
+                <Box align="center" pad="small">
+                  <Paragraph>No matter how valuable is your NFT or where it is deployed, here we all have same value!</Paragraph>
+                  <Paragraph>Feel free to clone/fork and modify it!</Paragraph>
+                  <Paragraph size="small">
+                    This game is offchain and does not sends transactions to blockchain, it uses{' '}
+                    <Anchor
+                      target="_blank"
+                      href="https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md"
+                      label="IPFS pubsub"
+                    />{' '}
+                    to allow multiplayer
+                  </Paragraph>
+                </Box>
+              </Tab>
+            </Tabs>
+
+
             </>
           }
           <Box padding="xlarge" align="center" style={{display: (initialize) ? 'block' : 'none'}}>

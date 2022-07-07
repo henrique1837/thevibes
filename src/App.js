@@ -132,11 +132,11 @@ export default function App () {
     setMetadataPlayer(obj.metadata);
     if(mapName === "null"){
       let nfts = [];
-      if(coinbase){
+      if(coinbase && myOwnedNfts && myOwnedERC1155){
         nfts = myOwnedNfts.concat(myOwnedERC1155);
       }
       const scale = mapTiles;
-      setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,idx,spaceName,scale)
+      setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,spaceName,scale)
       setTextInput3D(document.getElementById("textInput"));
       setInitialize3d(true);
     } else {
@@ -257,7 +257,7 @@ export default function App () {
       try{
         const ownedNfts = await getNftsFrom(coinbase,netId);
         let promises;
-        if(ownedNfts.data.accounts[0].ERC721tokens){
+        if(ownedNfts.data.accounts[0]?.ERC721tokens){
           const erc721Tokens = ownedNfts.data.accounts[0].ERC721tokens;
           promises = erc721Tokens.map(getMetadata);
           const newMyOwnedNfts = await Promise.all(promises)
@@ -265,7 +265,7 @@ export default function App () {
           setMyOwnedNfts(newMyOwnedNfts);
         }
 
-        if(ownedNfts.data.accounts[0].ERC1155balances){
+        if(ownedNfts.data.accounts[0]?.ERC1155balances){
           const erc1155Tokens = ownedNfts.data.accounts[0].ERC1155balances;
           promises = erc1155Tokens.map(getMetadata);
           const newMyOwnedERC1155 = await Promise.all(promises)

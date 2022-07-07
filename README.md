@@ -17,6 +17,8 @@ NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/x
 
 Included [UNS Login](https://docs.unstoppabledomains.com/login-with-unstoppable/), user can use its domain as character.
 
+Included [IDX](https://idx.xyz/) to allow users use its [Self.ID](https://self.id/) profile as character and save base's position in the space.
+
 Still a Proof of Concept:
 
 - Is it possible to make a multiplayer game using IPFS pubsub (or frameworks that were constructed on top of IPFS) ?  

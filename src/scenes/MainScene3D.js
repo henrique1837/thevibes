@@ -24,9 +24,8 @@ let ipfs;
 let textInput;
 let mapHash;
 let scale = 1;
-let idx;
 
-export const setAttributes = (mt,mts,cG,cA,r,mH,IDX,tM,sC) => {
+export const setAttributes = (mt,mts,cG,cA,r,mH,tM,sC) => {
   metadata = mt
   metadatas = mts;
   coinbaseGame = cG;
@@ -34,9 +33,6 @@ export const setAttributes = (mt,mts,cG,cA,r,mH,IDX,tM,sC) => {
   ipfs = r;
   if(mH){
     mapHash = mH;
-  }
-  if(IDX){
-    idx = IDX;
   }
   if(tM){
     topicMovements = tM;
@@ -63,7 +59,6 @@ class MainScene extends Scene3D {
     this.coinbaseGame = coinbaseGame;
     this.contractAddress = contractAddress;
     this.totalPlayers = 0;
-    this.idx = idx;
     this.peers = [];
     this.otherPlayers = []
     this.friendlyPlayers = [];
@@ -122,14 +117,6 @@ class MainScene extends Scene3D {
     await this.generatePlayer();
     this.prepareControls();
     room.on('message',this.handleMessages);
-    if(this.idx){
-      // Need to read doc, cant set ... need to include protocol to get dids that connected to the space in the past
-      const base = await this.idx.get(topicMovements);
-      console.log(base)
-      if(base){
-        this.mountBase(base);
-      }
-    }
     this.ready = true;
     /* Create OrbitDB instance -> Change for js-waku storage nodes
     OrbitDB.createInstance(ipfs)
@@ -181,7 +168,6 @@ class MainScene extends Scene3D {
     //this.player.add(body)
     this.player.add(sprite);
     this.player.add(sprite3d);
-
     this.player.position.set(2, 4, -1)
     this.player.scale.set(0.1,0.1,0.1);
     this.playerImg = playerImg;
@@ -371,19 +357,22 @@ class MainScene extends Scene3D {
     })
     this.player.body.applyForceY(4)
   }
-  mountBase = async (player) => {
-    if(!player.metadata){
+  mountBase = async (obj) => {
+    if(!obj.metadata){
       return
     }
-    if(!player.metadata.name){
+    if(!obj.metadata.name){
       return
     }
 
-    if(this.info[player.metadata.name]){
-      this.third.destroy(this.info[player.metadata.name]);
+    if(this.info[obj.metadata.name]){
+      this.third.destroy(this.info[obj.metadata.name]);
+      this.info[obj.metadata.name] = undefined;
     }
+
+
     // create text texture
-    let text = `${player.metadata.name} base demo`;
+    let text = `${obj.metadata.name} base demo`;
     let texture = new FLAT.TextTexture(`${text}`,{color: "black"});
 
     // texture in 3d space
@@ -391,15 +380,10 @@ class MainScene extends Scene3D {
     sprite3d.position.y = 0.5;
     sprite3d.setScale(0.001);
     let image;
-    if(player.metadata.name === this.player.name){
+    if(obj.metadata.name === this.player.name){
       image = this.playerImg;
-      if(this.idx){
-        // Need to read doc, cant set ... need to include protocol to get dids that connected to the space in the past
-        const id = await this.idx.set(topicMovements,player);
-        console.log(id);
-      }
     } else {
-      image = await this.getPlayerImg(player.metadata);
+      image = await this.getPlayerImg(obj.metadata);
     }
     const textureCube = this.third.misc.textureCube([image,image,image,image,image,image])
     const body = this.third.add.box({
@@ -411,8 +395,8 @@ class MainScene extends Scene3D {
       mass: 10000
     });
     body.add(sprite3d);
-    if(player.metadata.description){
-      text = `${player.metadata.description}`;
+    if(obj.metadata.description){
+      text = `${obj.metadata.description}`;
       texture = new FLAT.TextTexture(`${text}`);
 
       // texture in 3d space
@@ -421,21 +405,18 @@ class MainScene extends Scene3D {
       sprite3d.setScale(0.001);
       body.add(sprite3d);
     }
-    body.position.set(player.position.x,player.position.y+2,player.position.z)
+    body.position.set(obj.position.x,obj.position.y+2,obj.position.z)
     this.third.physics.add.existing(body);
     this.third.add.existing(body)
-    this.info[player.metadata.name] = body;
-    if(this.db){
-      this.db.put(player.metadata.name,{metadata: player.metadata,position:body.position})
-    }
+    this.info[obj.metadata.name] = body;
     this.third.physics.add.collider(body, this.player, async event => {
       if(this.keys.d.isDown){
-        if(player.metadata.external_url){
-          const confirm = window.confirm(`Visit ${player.metadata.external_url} ?`)
+        if(obj.metadata.external_url){
+          const confirm = window.confirm(`Visit ${obj.metadata.external_url} ?`)
           if(confirm){
-            window.open(player.metadata.external_url,"_blank");
+            window.open(obj.metadata.external_url,"_blank");
           }
-        } else if(player.metadata.name.includes("Guest")){
+        } else if(obj.metadata.name.includes("Guest")){
           const confirm = window.confirm(`Visit https://dweb.link/ipns/thehashavatars.crypto ?`)
           if(confirm){
             window.open("https://dweb.link/ipns/thehashavatars.crypto","_blank");

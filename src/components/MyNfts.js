@@ -4,6 +4,7 @@ import {
   Box,
   Heading,
   Image,
+  Paragraph,
   Card,
   CardHeader,
   CardBody,
@@ -18,6 +19,7 @@ export default function MyNfts (props) {
       props.myOwnedNfts?.length > 0 &&
       <>
       <Heading level="5">ERC721</Heading>
+      <Paragraph size="small">Select NFT to play</Paragraph>
       <Box alignContent="center" align="center" pad="medium" direction="row-responsive" wrap={true}>
       {
         props.myOwnedNfts?.map(obj => {
@@ -57,6 +59,7 @@ export default function MyNfts (props) {
       props.myOwnedERC1155?.length > 0 &&
       <>
       <Heading level="5">ERC1155</Heading>
+      <Paragraph size="small">Select NFT to play</Paragraph>
       <Box alignContent="center" align="center" pad="medium" direction="row-responsive" wrap={true}>
       {
         props.myOwnedERC1155?.map(obj => {

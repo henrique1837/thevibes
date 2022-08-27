@@ -25,7 +25,7 @@ class OnChainScene extends MainScene {
 
     super({ key: 'OnChainScene' });
     this.provider = provider;
-    this.status = 0;
+    this.status = false;
   }
 
 
@@ -33,23 +33,31 @@ class OnChainScene extends MainScene {
     if(!this.provider){
       return;
     }
-    if(!this.initOnChainGame && this.ready){
-      await this.initiateOnChainGame()
-    }
+
+
     this.handleControls(time,delta);
 
 
-    if(this.keys && this.gameContract) {
+    if(this.keys && this.gameContract && this.coinbaseGame) {
       if (this.keys.q.isDown && !this.status) {
         this.status = true;
         this.occupy();
       }
+    }
+    if(this.messageText && this.player && this.ready){
+      const pos = this.player.position;
+      this.messageText.position.set(pos.x,pos.y+0.2,pos.z);
+    }
+
+    if(!this.initOnChainGame && this.ready){
+      await this.initiateOnChainGame()
     }
   }
 
   initiateOnChainGame = async () => {
     // Register for events
     this.initOnChainGame = true;
+    this.setText(`Initiating contract ...`)
     const {chainId} = await provider.getNetwork();
     console.log(chainId)
     if(chainId === 4){
@@ -63,29 +71,64 @@ class OnChainScene extends MainScene {
     const uri = await this.gameContract.uri();
     this.setGameUri(uri);
     const filter = this.gameContract.filters.Result();
-    const that = this;
-    this.gameContract.on(filter,function(uri,requestId,result) {
+    this.gameContract.on(filter,this.handleEvents)
+    this.setText(`Contract initiated`);
 
-        console.log(`Event: URI - ${uri} Result - ${result}`);
-        if(result){
-          that.setGameUri(uri);
-        } else {
-          that.meteorsRain();
-        }
-    })
 
   }
+  handleEvents = (uri,requestId,result) => {
+
+      console.log(`Event: URI - ${uri} Result - ${result}`);
+      if(result){
+        if(uri === this.metadata.uri){
+          this.setText(`Your URI has won the place!`);
+        } else {
+          this.setText(`Someone won the place ...`);
+        }
+        this.setGameUri(uri);
+      } else {
+        let i = 0;
+        if(uri === this.metadata.uri){
+          this.setText(`You did a terrible mistake ...`);
+        } else {
+          this.setText(`Be carefull ...`);
+        }
+        const metorsInterval = setInterval(() => {
+          if(i < 20){
+            this.meteorsRain();
+          } else {
+            clearInterval(metorsInterval);
+          }
+          i = i + 1;
+        },2000);
+
+      }
+  }
   meteorsRain = () => {
-    this.third.haveSomeFun(10000);
+    if(!this.player){
+      return
+    }
+    const pos = this.player.position;
+    const sphere = this.third.physics.add.sphere(
+      { radius: 1, x: pos.x, y: pos.y+2, z: pos.z, mass: 100, bufferGeometry: true },
+      { phong: { color: 0x202020 } }
+    );
+    const that = this;
+    setTimeout(()=>{
+      that.third.destroy(sphere);
+    },6000);
   }
   occupy = async () => {
     try{
-      console.log(this.metadata)
+      console.log(this.metadata);
+      this.setText(`Sign transaction ...`)
       const uri = this.metadata.uri
       const signer = this.provider.getSigner();
       const gameContractWithSigner = this.gameContract.connect(signer);
       const tx = await gameContractWithSigner.requestRandomWords(uri);
+      this.setText(`Tx sent, wait for confirmation ...`);
       await tx.wait();
+      this.setText(`Tx confirmed, wait for vrf result ...`)
       this.status = false;
     } catch(err){
       console.log(err);
@@ -121,7 +164,27 @@ class OnChainScene extends MainScene {
     }
     await this.generateGameInfo(obj);
   }
+  setText = (text) => {
+    const pos = this.player.position;
+    let texture = new FLAT.TextTexture(text)
+    // texture in 3d space
+    let sprite3d = new FLAT.TextSprite(texture)
+    sprite3d.setScale(0.03)
+    const messageText = new THREE.Group();
+    messageText.add(sprite3d);
+    messageText.position.set(pos.x,pos.y+0.2,pos.z);
+    messageText.scale.set(0.03,0.03,0.03);
+    this.third.add.existing(messageText);
+    this.third.physics.add.existing(messageText);
+    this.messageText = messageText;
+    const that = this;
+    setTimeout(()=>{
+      that.third.destroy(messageText);
+      that.messageText = null
+    },5000);
 
+
+  }
   generateGameInfo = async (obj) => {
     // create text texture
     if(this.gameInfo){
@@ -153,8 +216,8 @@ class OnChainScene extends MainScene {
       sprite3d.setScale(0.01);
       gameInfo.add(sprite3d);
     }
-    gameInfo.position.set(2,4,-1)
-    gameInfo.scale.set(2,2,2 );
+    gameInfo.position.set(2.5,4,0.5)
+    gameInfo.scale.set(2,2,2);
     this.third.physics.add.existing(gameInfo,{
       mass: 100
     })

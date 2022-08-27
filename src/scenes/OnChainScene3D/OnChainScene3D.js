@@ -2,7 +2,7 @@ import {
   THREE,
   FLAT
 } from '@enable3d/phaser-extension';
-  
+
 import makeBlockie from 'ethereum-blockies-base64';
 
 
@@ -63,18 +63,21 @@ class OnChainScene extends MainScene {
     const uri = await this.gameContract.uri();
     this.setGameUri(uri);
     const filter = this.gameContract.filters.Result();
+    const that = this;
     this.gameContract.on(filter,function(uri,requestId,result) {
 
         console.log(`Event: URI - ${uri} Result - ${result}`);
-        if(result === 1){
-          this.setGameUri(uri);
+        if(result){
+          that.setGameUri(uri);
         } else {
-          this.third.haveSomeFun(10000)
+          that.meteorsRain();
         }
     })
 
   }
-
+  meteorsRain = () => {
+    this.third.haveSomeFun(10000);
+  }
   occupy = async () => {
     try{
       console.log(this.metadata)
@@ -122,7 +125,8 @@ class OnChainScene extends MainScene {
   generateGameInfo = async (obj) => {
     // create text texture
     if(this.gameInfo){
-      this.gameInfo.destroy();
+      this.third.destroy(this.gameInfo);
+      this.gameInfo = null
     }
     let texture = new FLAT.TextTexture(obj.name)
     // texture in 3d space

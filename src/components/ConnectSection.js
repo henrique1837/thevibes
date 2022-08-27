@@ -77,7 +77,7 @@ export default function ConnectSection(props){
           } catch(err){
             console.log(err)
           }
-        }} secondary label="Reload Profile" size="xsmall"/>
+        }} secondary label="Reload Profile" size="small"/>
         </>
       }
     </>

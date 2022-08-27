@@ -10,6 +10,7 @@ import {
   Text,
   Tab,
   Tabs,
+  Anchor
  } from 'grommet';
 
 import {
@@ -325,7 +326,11 @@ export default function App () {
                 <br />
                 Works on desktop.
               </Paragraph>
-              <IonPhaser ref={gameRef} game={Game3DOnChain()}  initialize={initialize3dOnChain} metadata={metadataPlayer}/>
+              {
+                netId === 80001 ?
+                <IonPhaser ref={gameRef} game={Game3DOnChain()}  initialize={initialize3dOnChain} metadata={metadataPlayer}/> :
+                <Paragraph><Anchor href="https://chainlist.network/" target="_blank" rel="noreferrer">Please connect to Mumbai Testnetwork</Anchor></Paragraph>
+              }
               </>
             }
             </> :

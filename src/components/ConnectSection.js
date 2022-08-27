@@ -92,7 +92,7 @@ export default function ConnectSection(props){
             props.setMetadata({
               metadata: {
                 name: props.user.sub,
-                image: `https://metadata.unstoppabledomains.com/image-src/${props.user.sub}.svg`
+                image: `https://metadata.unstoppabledomains.com/image-src/${props.user.sub}.svg`,
               },
               address: props.coinbase
             })
@@ -118,7 +118,8 @@ export default function ConnectSection(props){
                 image: props.profile.image ?
                        props.profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
                        makeBlockie(props.idx.id),
-                external_url: props.profile.url
+                external_url: props.profile.url,
+                uri: props.idx.id
               },
               address: props.coinbase
             })

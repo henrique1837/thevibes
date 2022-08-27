@@ -8,8 +8,7 @@ import {
   HashRouter as Router,
   Route,
   Routes,
-  Navigate,
-  useParams
+  Navigate
 } from 'react-router-dom';
 
 ReactDOM.render(
@@ -22,6 +21,8 @@ ReactDOM.render(
         <Route path="/badrobots-v0" element={<Navigate to="/destruction/bafkreig2opzec3rhplcedyztvorfuls3cqjx3qj3gtrbhemzipf52tm5za/bafkreihakwnufz66i2nmbh3qr7jiri3ulhqwpsc2gimsqzypl4arsuyway/badrobots-v0" />} />
         <Route path="/thespace3d-v0" element={<Navigate to="/null/bafybeiho6f7gewdwolfnhuqzkxi2vlla3p6o4qwvzo4ovto434b3bwf7l4/0.1/theSpace3d-v0" />} />
         <Route path="/colorghosts-v0" element={<Navigate to="/null/bafybeibresff33jvjkhzoiuryojkvi6i3tpxcj2yv7bvq23i4svvmy435y/1/colorNghosts-v0" />} />
+        <Route path="/chainspace-v0" element={<Navigate to="/null/bafybeiei27ezmaas5ir7ck6qkte77pibhp3vpipqcrvli6w27zbtrj3naq/1/chainspace-v0" />} />
+
         <Route path="/:mapName/:mapHash/:mapTiles/:spaceName" element={<App />} />
         <Route path="*" element={<Navigate to="/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0" />} />
       </Routes>

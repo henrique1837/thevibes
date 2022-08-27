@@ -1,4 +1,3 @@
-import chroma from "chroma-js";
 import {
   Scene3D,
   ExtendedObject3D,
@@ -13,7 +12,7 @@ import {
 import Room from 'ipfs-pubsub-room';
 
 
-const gameOrbitDB = '/orbitdb/zdpuB2NzfJc6kHd6dJikZYzXx3PMvxYTsRKAHvqN9mFMsEpVP/test';
+//const gameOrbitDB = '/orbitdb/zdpuB2NzfJc6kHd6dJikZYzXx3PMvxYTsRKAHvqN9mFMsEpVP/test';
 let topicMovements = 'hash-avatars/games/first-contact/movements';
 
 let metadata;
@@ -248,7 +247,7 @@ class MainScene extends Scene3D {
     console.log(this.armies[obj.metadata.name])
   }
   prepareScenario = async () => {
-    const object =  await this.third.load.gltf(`https://infura-ipfs.io/ipfs/${mapHash}/gltf/scene.gltf`);
+    const object =  await this.third.load.gltf(`https://nftstorage.link/ipfs/${mapHash}/gltf/scene.gltf`);
     const scene = object.scenes[0]
 
     const book = new ExtendedObject3D()
@@ -295,6 +294,7 @@ class MainScene extends Scene3D {
       s: this.input.keyboard.addKey('s'),
       f: this.input.keyboard.addKey('f'),
       s: this.input.keyboard.addKey('s'),
+      q: this.input.keyboard.addKey('q'),
       space: this.input.keyboard.addKey(32),
       enter: this.input.keyboard.addKey(13)
     }
@@ -460,6 +460,9 @@ class MainScene extends Scene3D {
   }
 
   update = (time, delta) => {
+    this.handleControls(time,delta);
+  }
+  handleControls = (time,delta) => {
     if(!this.ready){
       return
     }
@@ -675,8 +678,8 @@ class MainScene extends Scene3D {
     let playerImg;
     if(!this.guestTextures){
       this.guestTextures = await Promise.all([
-        this.third.load.texture("https://infura-ipfs.io/ipfs/QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF"),
-        this.third.load.texture("https://infura-ipfs.io/ipfs/bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy")
+        this.third.load.texture("https://nftstorage.link/ipfs/QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF"),
+        this.third.load.texture("https://nftstorage.link/ipfs/bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy")
       ])
     }
     if(!metadata.name.includes("Guest")){
@@ -692,9 +695,9 @@ class MainScene extends Scene3D {
         url = URL.createObjectURL(blob);
       } else {
         if(metadata.image.includes("ipfs://ipfs/")){
-          url = metadata.image.replace("ipfs://ipfs/","https://ipfs.io/ipfs/");
+          url = metadata.image.replace("ipfs://ipfs/","https://nftstorage.link/ipfs/");
         } else {
-          url = metadata.image.replace("ipfs://","https://ipfs.io/ipfs/")
+          url = metadata.image.replace("ipfs://","https://nftstorage.link/ipfs/")
         }
       }
       playerImg = await this.third.load.texture(url);

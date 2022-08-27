@@ -29,11 +29,11 @@ Still a Proof of Concept:
 
 ## UNS Login Demo Video
 
-  https://bafybeibh2ht5h3amo7hrmanxswa5mayi5z6itorp6g7skfaehdvzkhcdqm.ipfs.infura-ipfs.io/
+  https://bafybeibh2ht5h3amo7hrmanxswa5mayi5z6itorp6g7skfaehdvzkhcdqm.ipfs.nftstorage.link/
 
 ## Demo Video
 
-  https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.infura-ipfs.io/#/
+  https://bafybeif2myhdjkp6wa7dww7dyfztdpixdmihlueozpqi6fe22acpssgjze.ipfs.nftstorage.link/
 
 
 ## Demo

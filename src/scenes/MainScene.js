@@ -120,17 +120,17 @@ class MainScene extends Phaser.Scene {
       this.load.svg('ship', url);
     } else {
       if(this.metadata.image.includes("ipfs://ipfs/")){
-        this.load.image('ship', this.metadata.image.replace("ipfs://ipfs/","https://ipfs.io/ipfs/"));
+        this.load.image('ship', this.metadata.image.replace("ipfs://ipfs/","https://nftstorage.link/ipfs/"));
       } else if(this.metadata.image.includes("data:image/png;base64")) {
         this.textures.addBase64('ship', this.metadata.image);
       } else {
-        this.load.image('ship', this.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+        this.load.image('ship', this.metadata.image.replace("ipfs://","https://nftstorage.link/ipfs/"));
       }
     }
 
-    this.load.image("tiles", `https://ipfs.io/ipfs/${mapTiles}`);
+    this.load.image("tiles", `https://nftstorage.link/ipfs/${mapTiles}`);
 
-    this.load.tilemapTiledJSON("map", `https://ipfs.io/ipfs/${mapHash}`);
+    this.load.tilemapTiledJSON("map", `https://nftstorage.link/ipfs/${mapHash}`);
 
 
   }
@@ -368,7 +368,7 @@ class MainScene extends Phaser.Scene {
             const url = URL.createObjectURL(blob);
             loader.svg(obj.metadata.name, url);
           } else {
-            loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://ipfs.io/ipfs/"));
+            loader.image(obj.metadata.name,obj.metadata.image.replace("ipfs://","https://nftstorage.link/ipfs/"));
           }
           loader.once(Phaser.Loader.Events.COMPLETE, () => {
             // texture loaded so use instead of the placeholder

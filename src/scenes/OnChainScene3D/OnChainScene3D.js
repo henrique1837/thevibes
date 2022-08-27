@@ -2,8 +2,7 @@ import {
   THREE,
   FLAT
 } from '@enable3d/phaser-extension';
-import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx';
-
+  
 import makeBlockie from 'ethereum-blockies-base64';
 
 
@@ -95,9 +94,9 @@ class OnChainScene extends MainScene {
     let obj;
     if(uri.includes("did")){
       // Get profile info from ceramic.network
-      let profile = await idx.get('basicProfile',uri);
+      const profile = await idx.get('basicProfile',uri);
       if(!profile){
-        profile = await getLegacy3BoxProfileAsBasicProfile(uri);
+        return
       }
       obj = {
         name: profile.name ? profile.name : uri,

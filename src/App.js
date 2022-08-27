@@ -20,9 +20,8 @@ import {
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
-import authenticateWithEthereum from './hooks/useIDX.js';
+import authenticateWithEthereum from './hooks/useSelfID.js';
 import Room from 'ipfs-pubsub-room';
-import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx'
 
 import Game from './Game';
 import Game3D from './Game3D';
@@ -169,11 +168,7 @@ export default function App () {
         setConnectingIDX(true);
         const newIDX = await authenticateWithEthereum(provider.provider,coinbase);
         setIDX(newIDX)
-        let newProfile = await newIDX.get('basicProfile');
-        if(!newProfile){
-          newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
-        }
-        console.log(newProfile)
+        const newProfile = await newIDX.get('basicProfile');
         setProfile(newProfile);
         setConnectingIDX(false);
       } catch(err){
@@ -382,6 +377,7 @@ export default function App () {
                     connectingIDX={connectingIDX}
                     loadWeb3Modal={loadWeb3Modal}
                     setMetadata={setMetadata}
+                    setProfile={setProfile}
                    />
                    <ConnectNFTSection
                       guests={guests}

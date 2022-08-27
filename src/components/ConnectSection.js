@@ -11,7 +11,6 @@ import {
   CardFooter,
   Image,
  } from 'grommet';
-import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx'
 import makeBlockie from 'ethereum-blockies-base64';
 
 export default function ConnectSection(props){
@@ -66,12 +65,13 @@ export default function ConnectSection(props){
         <Paragraph>
           <small>Edit your profile at <Anchor href={`https://clay.self.id/${props.idx.id}`} target="_blank" size="small" label="Self.ID" /></small>
         </Paragraph>
+        <Paragraph>
+          <small>Explore at <Anchor href={`https://cerscan.com/testnet-clay/profile/${props.idx.id}`} target="_blank" size="small" label="Cerscan" /></small>
+        </Paragraph>
         <Button onClick={async () => {
           try{
-            let newProfile = await props.idx.get('basicProfile');
-            if(!newProfile){
-              newProfile = await getLegacy3BoxProfileAsBasicProfile(props.coinbase)
-            }
+            //await props.idx.set('basicProfile',{name:"test12121212"});
+            const newProfile = await props.idx.get('basicProfile');
             console.log(newProfile)
             props.setProfile(newProfile);
           } catch(err){

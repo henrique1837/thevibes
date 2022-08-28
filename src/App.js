@@ -393,17 +393,8 @@ export default function App () {
                       Connected as {user ? user.user.sub : profile?.name ? profile.name : coinbase}
                     </Paragraph>
                     <Tabs>
-                      {
-                        value === "ChainSpace" &&
-                        <Tab title="Use Wallet">
-                          <ChainSpaceConnect
-                            guests={guests}
-                            coinbase={coinbase}
-                            setMetadata={setMetadata}
-                           />
-                        </Tab>
-                      }
-                      <Tab title="Use Profile">
+
+                      <Tab title="Use Profile" active>
                         <ConnectSection
                           guests={guests}
                           coinbase={coinbase}
@@ -433,6 +424,16 @@ export default function App () {
                            ipfs={ipfs}
                         />
                       </Tab>
+                      {
+                        value === "ChainSpace" &&
+                        <Tab title="Use Wallet">
+                          <ChainSpaceConnect
+                            guests={guests}
+                            coinbase={coinbase}
+                            setMetadata={setMetadata}
+                           />
+                        </Tab>
+                      }
                     </Tabs>
                   </>
                   }

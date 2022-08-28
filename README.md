@@ -19,7 +19,7 @@ Included [UNS Login](https://docs.unstoppabledomains.com/login-with-unstoppable/
 
 Included [Self.ID SDK](https://developers.ceramic.network/reference/self-id/) to allow users use its [Self.ID](https://clay.self.id/) profile as character and save base's position in the space.
 
-ChainSpace, an onchain space using [Chainlink VRF v2](https://docs.chain.link/docs/chainlink-vrf/) at Mumbai Testnetwork was added, where the number generated is used to trigger some action in the game.
+ChainSpace, the first onchain space of TheVibes Space, uses [Chainlink VRF](https://docs.chain.link/docs/chainlink-vrf/) at Mumbai Testnetwork to trigger an action in the game based in the result of the number generated.
 
 ## ChainSpace (VRF consumer) Demo Video
 
@@ -51,6 +51,14 @@ Any of URLs
 
 ## Testing Guide
 
+
+<details>
+<summary style="font-size:24px"><b>Basic 2D</b></summary>
+
+#### Controls
+  - Arrows keys: move
+  - Enter: send message
+
 ### As Guest
 
   This option can be used by users that does not have NFTs or wallet.
@@ -79,7 +87,33 @@ Any of URLs
 
   ![Guest Died](https://ipfs.io/ipfs/bafybeiclmddnvdbs3netka3nydfv6nnx52dxwjqgdqhcfwsopjhg2wutxe/guestDied.png "Guest Died")
 
+</details>
 
+<details>
+<summary style="font-size:24px"><b>Basic 3D</b></summary>
+
+#### Controls
+  - Mouse: point direction
+  - W: move forward
+  - A: place base
+  - D: Go to external url of near base
+  - F: Shoot
+
+</details>
+
+<details>
+
+<summary style="font-size:24px"><b>ChainSpace</b></summary>
+
+#### Controls
+  - Mouse: point direction
+  - W: move forward
+  - A: place base
+  - D: Go to external url of near base
+  - F: Shoot
+  - Q: Interact with game contract
+
+</details>
 
 # Getting Started with Create React App
 

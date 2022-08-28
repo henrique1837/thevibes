@@ -211,7 +211,7 @@ class OnChainScene extends MainScene {
     const material = new THREE.SpriteMaterial( { map: img } );
     const sprite = new THREE.Sprite( material );
     sprite.position.y = 0.2;
-    sprite3d.position.y = 1;
+    sprite3d.position.y = 2.5;
     //const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
     //body.material.invisible = true;
     //gameInfo.add(body)
@@ -221,7 +221,7 @@ class OnChainScene extends MainScene {
       texture = new FLAT.TextTexture(obj.description);
       // texture in 3d space
       sprite3d = new FLAT.TextSprite(texture)
-      sprite3d.position.y = 0.6;
+      sprite3d.position.y = 1.8;
       sprite3d.setScale(0.005);
       gameInfo.add(sprite3d);
     }

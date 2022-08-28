@@ -2,6 +2,7 @@ import React from 'react'
 import {
   Box,
   Paragraph,
+  Text,
   Anchor,
   Select,
   Image,
@@ -44,7 +45,7 @@ export default function Spaces(props){
     {
       name: "ChainSpace",
       image : "https://ipfs.io/ipfs/bafkreiaui7kqyj22m7m6lbt22l3w3kfkhxxfz33f5vgpryalegp35q7k7m",
-      description: "Onchain demo using chainlink VRF, mumbai testnetwork",
+      description: <Text>Onchain demo using <Anchor href="https://docs.chain.link/docs/chainlink-vrf/" target="_blank" rel="noreferrer">ChainLink VRF</Anchor>, mumbai testnetwork</Text>,
       path: "/chainspace-v0",
       uri: "https://mumbai.polygonscan.com/address/0x2F170CEa20ca9b59F4FE6f8F000Fb8D589C06387",
       tilesetURI: "https://sketchfab.com/3d-models/low-poly-city-41697300a4c643d089784b8688b2ed2c#download"

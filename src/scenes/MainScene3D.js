@@ -782,25 +782,7 @@ class MainScene extends Scene3D {
         sphere.body.on.collision((otherObject, event) => {
           if (otherObject.name !== 'ground')
           if(otherObject.name === this.player.name){
-            this.third.physics.destroy(this.player)
-            if(this.info[this.player.metadata.name]){
-              const base = this.info[this.player.metadata.name];
-              const pos = base.position.clone();
-              this.player.position.set(pos.x,pos.y+2,pos.z);
-
-            } else {
-              this.player.position.set(2, 4, -1);
-            }
-            this.third.destroy(sphere);
-            this.third.physics.add.existing(this.player)
-            this.army?.map(nft => {
-              this.third.physics.destroy(nft)
-              const pos = this.player.position.clone();
-              nft.position.set(pos.x,pos.y+1,pos.z);
-              this.third.physics.add.existing(nft);
-
-            })
-
+            this.respawnPlayer();
           }
         })
 
@@ -829,12 +811,32 @@ class MainScene extends Scene3D {
       console.log(err)
     }
   }
+
+  respawnPlayer = () => {
+    this.third.physics.destroy(this.player)
+    if(this.info[this.player.metadata.name]){
+      const base = this.info[this.player.metadata.name];
+      const pos = base.position.clone();
+      this.player.position.set(pos.x,pos.y+2,pos.z);
+
+    } else {
+      this.player.position.set(2, 4, -1);
+    }
+    this.third.destroy(sphere);
+    this.third.physics.add.existing(this.player)
+    this.army?.map(nft => {
+      this.third.physics.destroy(nft)
+      const pos = this.player.position.clone();
+      nft.position.set(pos.x,pos.y+1,pos.z);
+      this.third.physics.add.existing(nft);
+
+    })
+  }
+
   onWindowResize = () => {
 
     this.third.camera.aspect = window.innerWidth / window.innerHeight;
     this.third.camera.updateProjectionMatrix();
-
-    this.renderer.setSize( window.innerWidth, window.innerHeight );
 
   }
 }

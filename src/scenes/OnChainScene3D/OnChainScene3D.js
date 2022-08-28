@@ -113,6 +113,12 @@ class OnChainScene extends MainScene {
       { radius: 0.1, x: pos.x, y: pos.y+2, z: pos.z, mass: 100, bufferGeometry: true },
       { phong: { color: 0x202020 } }
     );
+    sphere.body.on.collision((otherObject, event) => {
+      if (otherObject.name !== 'ground')
+      if(otherObject.name === this.player.name){
+        this.respawnPlayer();
+      }
+    })
     const that = this;
     setTimeout(()=>{
       that.third.destroy(sphere);

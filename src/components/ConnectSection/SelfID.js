@@ -21,7 +21,7 @@ export default function SelfID(props){
     {
       !props.idx && !props.connectingIDX && props.coinbase &&
       <Box pad="xxsmall">
-        <Button secondary onClick={props.connectIDX} label="Connect Self.id" size="small"/>
+        <Button primary onClick={props.connectIDX} label="Connect Self.id" size="small"/>
         <Paragraph size="small">Use this option to play with your <Anchor href={`https://clay.self.id`} target="_blank" size="xxsmall" label="Self.ID" /></Paragraph>
       </Box>
     }
@@ -68,7 +68,7 @@ export default function SelfID(props){
           } width="250px"/>
         </CardBody>
         <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-          <Button secondary onClick={() => {
+          <Button primary onClick={() => {
             props.setMetadata({
               metadata: {
                 name: props.profile.name ? props.profile.name : props.coinbase,

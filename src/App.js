@@ -10,7 +10,8 @@ import {
   Text,
   Tab,
   Tabs,
-  Anchor
+  Anchor,
+  Spinner
  } from 'grommet';
 
 import {
@@ -37,6 +38,7 @@ import Information from './components/Information';
 import Spaces from './components/Spaces';
 import ConnectSection from './components/ConnectSection';
 import ConnectNFTSection from './components/ConnectNFTSection';
+import WalletConnect from './components/WalletConnect'
 
 
 
@@ -375,32 +377,57 @@ export default function App () {
               <Tab title="Select Space">
                 <Box align="center" pad="medium" alignContent="center" >
                   <Spaces setValue={setValue} value={value} />
-                  <ConnectSection
-                    guests={guests}
-                    coinbase={coinbase}
-                    ipfs={ipfs}
-                    ipfsErr={ipfsErr}
-                    idx={idx}
-                    profile={profile}
-                    user={user}
-                    connectIDX={connectIDX}
-                    connectingIDX={connectingIDX}
-                    loadWeb3Modal={loadWeb3Modal}
-                    setMetadata={setMetadata}
-                    setProfile={setProfile}
-                    space={value}
-                   />
-                   <ConnectNFTSection
-                      guests={guests}
-                      client={client}
-                      graphErr={graphErr}
-                      loadingMyNFTs={loadingMyNFTs}
-                      myOwnedERC1155={myOwnedERC1155}
-                      myOwnedNfts={myOwnedNfts}
+                  {
+                    !ipfs  && !ipfsErr ?
+                    <>
+                      <Spinner />
+                      <Paragraph>Loading ipfs pubsub ...</Paragraph>
+                    </> :
+                    ipfsErr ?
+                    <Paragraph>Error while loading IPFS, try again later ...</Paragraph> :
+                    !coinbase ?
+                    <WalletConnect
+                      loadWeb3Modal={loadWeb3Modal}
                       setMetadata={setMetadata}
-                      ipfs={ipfs}
-                   />
-
+                      guests={guests}
+                    /> :
+                    <>
+                    <Paragraph style={{wordBreak: 'break-word'}}>
+                      Connected as {user ? user.user.sub : profile?.name ? profile.name : coinbase}
+                    </Paragraph>
+                    <Tabs>
+                      <Tab title="Use Profile">
+                        <ConnectSection
+                          guests={guests}
+                          coinbase={coinbase}
+                          ipfs={ipfs}
+                          ipfsErr={ipfsErr}
+                          idx={idx}
+                          profile={profile}
+                          user={user}
+                          connectIDX={connectIDX}
+                          connectingIDX={connectingIDX}
+                          loadWeb3Modal={loadWeb3Modal}
+                          setMetadata={setMetadata}
+                          setProfile={setProfile}
+                          space={value}
+                         />
+                      </Tab>
+                      <Tab title="Use NFT">
+                        <ConnectNFTSection
+                           guests={guests}
+                           client={client}
+                           graphErr={graphErr}
+                           loadingMyNFTs={loadingMyNFTs}
+                           myOwnedERC1155={myOwnedERC1155}
+                           myOwnedNfts={myOwnedNfts}
+                           setMetadata={setMetadata}
+                           ipfs={ipfs}
+                        />
+                      </Tab>
+                    </Tabs>
+                  </>
+                  }
                 </Box>
               </Tab>
               <Tab title="Information">

@@ -16,10 +16,10 @@ export default function ConnectSection(props){
         user={props.user}
         setMetadata={props.setMetadata}
       /> :
-      props.coinbase &&
       props.ipfs &&
       <SelfID
         profile={props.profile}
+        setProfile={props.setProfile}
         setMetadata={props.setMetadata}
         idx={props.idx}
         connectingIDX={props.connectingIDX}

@@ -2,6 +2,7 @@ import React from 'react'
 import {
   Box,
   Paragraph,
+  Text,
   Anchor,
   Spinner,
   Button,
@@ -29,11 +30,40 @@ export default function SelfID(props){
       props.connectingIDX &&
       <Spinner />
     }
-    <Paragraph>
     {
-      props.profile?.description
+      props.profile &&
+      <Card  height="medium" width="medium" background="light-1" align="center">
+        <CardHeader pad="small"><b>{props.profile.name}</b></CardHeader>
+        <CardBody pad="small">
+          <Text>
+          {
+            props.profile?.description
+          }
+          </Text>
+          <Image alignSelf="center" src={
+            props.profile.image ?
+            props.profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+            makeBlockie(props.idx.id)
+          } width="150px" margin="large"/>
+        </CardBody>
+        <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
+          <Button primary onClick={() => {
+            props.setMetadata({
+              metadata: {
+                name: props.profile.name ? props.profile.name : props.coinbase,
+                description: props.profile.description,
+                image: props.profile.image ?
+                       props.profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+                       makeBlockie(props.idx.id),
+                external_url: props.profile.url,
+                uri: props.idx.id
+              },
+              address: props.coinbase
+            })
+          }} size="small" label="Play using Self.ID" />
+        </CardFooter>
+      </Card>
     }
-    </Paragraph>
     {
       !props.connectingIDX &&
       props.idx &&
@@ -56,35 +86,7 @@ export default function SelfID(props){
       }} secondary label="Reload Profile" size="small"/>
       </>
     }
-    {
-      props.profile &&
-      <Card  height="medium" width="medium" background="light-1" align="center">
-        <CardHeader pad="medium"><b>{props.profile.name}</b></CardHeader>
-        <CardBody pad="small">
-          <Image alignSelf="center" src={
-            props.profile.image ?
-            props.profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
-            makeBlockie(props.idx.id)
-          } width="250px"/>
-        </CardBody>
-        <CardFooter pad={{horizontal: "small"}} background="light-2" align="center" alignContent="center">
-          <Button primary onClick={() => {
-            props.setMetadata({
-              metadata: {
-                name: props.profile.name ? props.profile.name : props.coinbase,
-                description: props.profile.description,
-                image: props.profile.image ?
-                       props.profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
-                       makeBlockie(props.idx.id),
-                external_url: props.profile.url,
-                uri: props.idx.id
-              },
-              address: props.coinbase
-            })
-          }} size="small" label="Play using Self.ID" />
-        </CardFooter>
-      </Card>
-    }
+
     </>
   )
 }

@@ -404,6 +404,7 @@ export default function App () {
                           ipfsErr={ipfsErr}
                           idx={idx}
                           profile={profile}
+                          setProfile={setProfile}
                           user={user}
                           connectIDX={connectIDX}
                           connectingIDX={connectingIDX}

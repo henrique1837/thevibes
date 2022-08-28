@@ -23,7 +23,7 @@ ChainSpace, the first onchain space of TheVibes Space, uses [Chainlink VRF](http
 
 ## ChainSpace (VRF consumer) Demo Video
 
-
+  https://bafybeibbss43exrs3mrgugqguxthlovsdzlmaienhwaazhmykgnmvg4wru.ipfs.nftstorage.link/
 
 ## UNS Login Demo Video
 

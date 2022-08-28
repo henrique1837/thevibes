@@ -94,13 +94,13 @@ class OnChainScene extends MainScene {
           this.setText(`Be carefull ...`);
         }
         const metorsInterval = setInterval(() => {
-          if(i < 20){
+          if(i < 100){
             this.meteorsRain();
           } else {
             clearInterval(metorsInterval);
           }
           i = i + 1;
-        },2000);
+        },500);
 
       }
   }
@@ -110,7 +110,7 @@ class OnChainScene extends MainScene {
     }
     const pos = this.player.position;
     const sphere = this.third.physics.add.sphere(
-      { radius: 1, x: pos.x, y: pos.y+2, z: pos.z, mass: 100, bufferGeometry: true },
+      { radius: 0.1, x: pos.x, y: pos.y+2, z: pos.z, mass: 100, bufferGeometry: true },
       { phong: { color: 0x202020 } }
     );
     const that = this;

@@ -783,6 +783,7 @@ class MainScene extends Scene3D {
           if (otherObject.name !== 'ground')
           if(otherObject.name === this.player.name){
             this.respawnPlayer();
+            this.third.destroy(sphere);
           }
         })
 
@@ -822,7 +823,6 @@ class MainScene extends Scene3D {
     } else {
       this.player.position.set(2, 4, -1);
     }
-    this.third.destroy(sphere);
     this.third.physics.add.existing(this.player)
     this.army?.map(nft => {
       this.third.physics.destroy(nft)

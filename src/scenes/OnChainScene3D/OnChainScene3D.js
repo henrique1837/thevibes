@@ -46,7 +46,12 @@ class OnChainScene extends MainScene {
     }
     if(this.messageText && this.player && this.ready){
       const pos = this.player.position;
+      this.third.physics.destroy(this.messageText);
+
       this.messageText.position.set(pos.x,pos.y+0.2,pos.z);
+
+      this.third.physics.add.existing(this.messageText);
+
     }
 
     if(!this.initOnChainGame && this.ready){
@@ -188,8 +193,8 @@ class OnChainScene extends MainScene {
     this.messageText = messageText;
     const that = this;
     setTimeout(()=>{
-      that.third.destroy(messageText);
-      that.messageText = null
+      this.third.destroy(messageText);
+      this.messageText = null
     },5000);
 
 

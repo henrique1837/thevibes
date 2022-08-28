@@ -106,11 +106,7 @@ export default function App () {
       setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,spaceName,scale)
       setTextInput3D(document.getElementById("textInput"));
       if(spaceName === "chainspace-v0"){
-        if(idx){
-          setGameProvider(provider,idx);
-        } else {
-          setGameProvider(provider,core);
-        }
+        setGameProvider(provider,core);
         setInitialize3dOnChain(true);
       }
       setInitialize3d(true);

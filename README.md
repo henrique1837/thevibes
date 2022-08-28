@@ -4,28 +4,26 @@ A place where NFTs can play togheter and have fun. Currently playable with NFTs 
 
 Users can also enter as guest (no NFT in wallet / not connected the wallet to the dapp).
 
-Offchain Free to Play (Play for Fun!) game done with [Phaser](https://phaser.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md) to allow chat messages between players and show positions/movements in the game.
+Proof of concept collection of offchain Free to Play (Play for Fun!) games done with [Phaser](https://phaser.io/)/[Enable3D](https://enable3d.io/) using [IPFS pubsub](https://github.com/ipfs/js-ipfs/blob/master/docs/core-api/PUBSUB.md) to allow chat messages between players and show positions/movements in the game.
 
 
 2D Maps were done using tiles from [itch.io](https://itch.io/game-assets/free/tag-tileset) and generated using [map editor](https://www.mapeditor.org/).
 
 
-TheVibes3D done with [Enable3D](https://enable3d.io/), map done from [heightmap](https://i.stack.imgur.com/NvF5e.jpg), assets from [sketchfab](https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270)
+3D spaces done with [Enable3D](https://enable3d.io/), scenarios from [sketchfab](https://sketchfab.com/3d-models/low-poly-office-building-1-c4970cbcb82746fb8c107875e789e270)
 
 
 NFTs lists were get using https://thegraph.com/hosted-service/subgraph/leon-do/xdai-erc721-erc1155 and https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic (and theirs networks);
 
 Included [UNS Login](https://docs.unstoppabledomains.com/login-with-unstoppable/), user can use its domain as character.
 
-Included [IDX](https://idx.xyz/) to allow users use its [Self.ID](https://self.id/) profile as character and save base's position in the space.
+Included [Self.ID SDK](https://developers.ceramic.network/reference/self-id/) to allow users use its [Self.ID](https://clay.self.id/) profile as character and save base's position in the space.
 
-Still a Proof of Concept:
+ChainSpace, an onchain space using [Chainlink VRF v2](https://docs.chain.link/docs/chainlink-vrf/) at Mumbai Testnetwork was added, where the number generated is used to trigger some action in the game.
 
-- Is it possible to make a multiplayer game using IPFS pubsub (or frameworks that were constructed on top of IPFS) ?  
-- What are the issues ?
-- How to prevent cheat in the game ?
-- Should the game get the actual map to be used from a smart contract controled by a DAO ?
-- How to allow users play with their own created maps ?
+## ChainSpace (VRF consumer) Demo Video
+
+
 
 ## UNS Login Demo Video
 
@@ -44,6 +42,7 @@ Any of URLs
  - https://gateway.pinata.cloud/ipns/thevibes-space.crypto/
  - https://ipfs.io/ipns/thevibes-space.crypto/
  - ipns://thevibes-space.crypto/
+ - https://cool-art-1434.on.fleek.co/
 
 ## Contact
 

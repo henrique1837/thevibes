@@ -39,6 +39,7 @@ import Spaces from './components/Spaces';
 import ConnectSection from './components/ConnectSection';
 import ConnectNFTSection from './components/ConnectNFTSection';
 import WalletConnect from './components/WalletConnect'
+import ChainSpaceConnect from './components/ChainSpaceConnect'
 
 
 
@@ -211,7 +212,7 @@ export default function App () {
     } else if(value === "ColorNGhosts"){
       navigate("/null/bafybeibresff33jvjkhzoiuryojkvi6i3tpxcj2yv7bvq23i4svvmy435y/1/colorNghosts-v0")
     } else if(value === "ChainSpace"){
-      navigate("/null/bafybeiei27ezmaas5ir7ck6qkte77pibhp3vpipqcrvli6w27zbtrj3naq/1/chainspace-v0")
+      navigate("/null/bafybeiei27ezmaas5ir7ck6qkte77pibhp3vpipqcrvli6w27zbtrj3naq/0.1/chainspace-v0")
     } else {
       navigate("/!CL_DEMO_32x32/bafybeicr66ob43zu7leqopu45bx3fytchkyd5qv2a6dfcgqc7ewc7skgta/bafkreier6xkncx24wj4wm7td3v2k3ea2r2gpfg2qamtvh7digt27mmyqkm/thevibes-space-game-v0");
     }
@@ -396,6 +397,16 @@ export default function App () {
                       Connected as {user ? user.user.sub : profile?.name ? profile.name : coinbase}
                     </Paragraph>
                     <Tabs>
+                      {
+                        value === "ChainSpace" &&
+                        <Tab title="Use Wallet">
+                          <ChainSpaceConnect
+                            guests={guests}
+                            coinbase={coinbase}
+                            setMetadata={setMetadata}
+                           />
+                        </Tab>
+                      }
                       <Tab title="Use Profile">
                         <ConnectSection
                           guests={guests}

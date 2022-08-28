@@ -148,19 +148,22 @@ class OnChainScene extends MainScene {
         name: profile.name ? profile.name : uri,
         description: profile.description,
         image: profile.image ?
-               profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
+               profile.image :
                makeBlockie(uri),
         external_url: profile.url
       }
     } else {
       // Assumes it is nft metadata
       try{
-        const metadata = JSON.parse(await (await fetch(`https://ipfs.io/ipfs/${uri}`)).text());
+        const metadata = JSON.parse(await (await fetch(`https://nftstorage.link/ipfs/${uri}`)).text());
         obj = metadata;
       } catch(err){
         console.log(err)
         return
       }
+    }
+    if(!obj.name || !obj.image){
+      return
     }
     await this.generateGameInfo(obj);
   }
@@ -194,7 +197,7 @@ class OnChainScene extends MainScene {
     let texture = new FLAT.TextTexture(obj.name)
     // texture in 3d space
     let sprite3d = new FLAT.TextSprite(texture)
-    sprite3d.setScale(0.03)
+    sprite3d.setScale(0.01)
     const gameInfo = new THREE.Group()
     gameInfo.name =  obj.name
     console.log(obj)
@@ -202,7 +205,7 @@ class OnChainScene extends MainScene {
     const material = new THREE.SpriteMaterial( { map: img } );
     const sprite = new THREE.Sprite( material );
     sprite.position.y = 0.2;
-    sprite3d.position.y = 0.8;
+    sprite3d.position.y = 1;
     //const body = this.third.add.box({ height: 0.1, y: -0.5, width: 0.4, depth: 0.4 }, { lambert: { color: 0xFF3333 } });
     //body.material.invisible = true;
     //gameInfo.add(body)
@@ -212,8 +215,8 @@ class OnChainScene extends MainScene {
       texture = new FLAT.TextTexture(obj.description);
       // texture in 3d space
       sprite3d = new FLAT.TextSprite(texture)
-      sprite3d.position.y = 0.4;
-      sprite3d.setScale(0.01);
+      sprite3d.position.y = 0.6;
+      sprite3d.setScale(0.005);
       gameInfo.add(sprite3d);
     }
     gameInfo.position.set(2.5,4,0.5)

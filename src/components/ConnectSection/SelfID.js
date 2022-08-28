@@ -1,5 +1,9 @@
 import React from 'react'
 import {
+  Box,
+  Paragraph,
+  Anchor,
+  Spinner,
   Button,
   Card,
   CardBody,
@@ -8,15 +12,22 @@ import {
   Image,
  } from 'grommet';
 
+import makeBlockie from 'ethereum-blockies-base64';
+
+
 export default function SelfID(props){
   return(
     <>
     {
-      !props.connectingIDX && props.coinbase &&
+      !props.idx && !props.connectingIDX && props.coinbase &&
       <Box pad="xxsmall">
         <Button secondary onClick={props.connectIDX} label="Connect Self.id" size="small"/>
         <Paragraph size="small">Use this option to play with your <Anchor href={`https://clay.self.id`} target="_blank" size="xxsmall" label="Self.ID" /></Paragraph>
       </Box>
+    }
+    {
+      props.connectingIDX &&
+      <Spinner />
     }
     <Paragraph>
     {
@@ -24,7 +35,8 @@ export default function SelfID(props){
     }
     </Paragraph>
     {
-      !props.connectingIDX ?
+      !props.connectingIDX &&
+      props.idx &&
       <>
       <Paragraph>
         <small>Edit your profile at <Anchor href={`https://clay.self.id/${props.idx.id}`} target="_blank" size="small" label="Self.ID" /></small>
@@ -42,8 +54,7 @@ export default function SelfID(props){
           console.log(err)
         }
       }} secondary label="Reload Profile" size="small"/>
-      </> :
-      <Spinner />
+      </>
     }
     {
       props.profile &&

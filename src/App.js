@@ -23,7 +23,7 @@ import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
 import authenticateWithEthereum from './hooks/useSelfID.js';
 import Room from 'ipfs-pubsub-room';
-
+import { Core } from '@self.id/core'
 import Game from './Game';
 import Game3D from './Game3D';
 import Game3DOnChain from './Game3DOnChain';
@@ -41,6 +41,7 @@ import ConnectNFTSection from './components/ConnectNFTSection';
 
 
 const topic = 'hash-avatars/games/first-contact';
+const core = new Core({ ceramic: 'testnet-clay' })
 
 export default function App () {
 
@@ -52,7 +53,7 @@ export default function App () {
     netId,
     loadWeb3Modal,
     logoutOfWeb3Modal,
-    user
+    user,
   } = useWeb3Modal();
 
   const { ipfs,ipfsErr } = useIPFS();
@@ -102,7 +103,11 @@ export default function App () {
       setAttributes3D(obj.metadata,nfts,coinbase,obj.address,ipfs,mapHash,spaceName,scale)
       setTextInput3D(document.getElementById("textInput"));
       if(spaceName === "chainspace-v0"){
-        setGameProvider(provider,idx);
+        if(idx){
+          setGameProvider(provider,idx);
+        } else {
+          setGameProvider(provider,core);
+        }
         setInitialize3dOnChain(true);
       }
       setInitialize3d(true);
@@ -358,7 +363,7 @@ export default function App () {
                   <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
                 }
                 {
-                  netId &&
+                  netId && coinbase &&
                   <Text size="xsmall" alignSelf="center" alignContent="center">
                     ChainId: {netId}
                   </Text>
@@ -367,7 +372,7 @@ export default function App () {
             </Header>
             <Heading level="2">Play for Fun</Heading>
             <Tabs>
-              <Tab title="Play">
+              <Tab title="Select Space">
                 <Box align="center" pad="medium" alignContent="center" >
                   <Spaces setValue={setValue} value={value} />
                   <ConnectSection
@@ -383,6 +388,7 @@ export default function App () {
                     loadWeb3Modal={loadWeb3Modal}
                     setMetadata={setMetadata}
                     setProfile={setProfile}
+                    space={value}
                    />
                    <ConnectNFTSection
                       guests={guests}

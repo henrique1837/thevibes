@@ -57,9 +57,9 @@ UAuthWeb3Modal.registerWeb3Modal(web3Modal)
 export {web3Modal,uauthOptions};
 
 function useWeb3Modal(config = {}) {
-  const [provider, setProvider] = useState();
+  const [provider, setProvider] = useState(new ethers.providers.JsonRpcProvider("https://rpc-mumbai.maticvigil.com"));
   const [coinbase, setCoinbase] = useState();
-  const [netId , setNetId] = useState();
+  const [netId , setNetId] = useState(80001);
   const [connecting , setConnecting] = useState();
   const [noProvider , setNoProvider] = useState();
   //const [cyberConnect , setCyberConnect] = useState();

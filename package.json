@@ -6,11 +6,10 @@
   "dependencies": {
     "@3id/connect": "^0.4.1",
     "@apollo/client": "^3.5.9",
-    "@ceramicnetwork/3id-did-resolver": "^2.0.4",
-    "@ceramicnetwork/http-client": "^2.0.4",
-    "@ceramicstudio/idx": "^0.12.2",
     "@enable3d/phaser-extension": "^0.25.1",
     "@ion-phaser/react": "^1.3.0",
+    "@orbisclub/modules": "^0.0.43",
+    "@orbisclub/orbis-sdk": "^0.4.4-beta.41",
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.3",
     "@testing-library/user-event": "^13.5.0",

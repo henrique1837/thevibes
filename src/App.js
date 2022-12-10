@@ -30,9 +30,7 @@ import makeBlockie from 'ethereum-blockies-base64';
 import useWeb3Modal from './hooks/useWeb3Modal';
 import useClient from './hooks/useGraphClient';
 import useIPFS from './hooks/useIPFS';
-import authenticateWithEthereum from './hooks/useIDX.js';
 import Room from 'ipfs-pubsub-room';
-import { getLegacy3BoxProfileAsBasicProfile } from '@ceramicstudio/idx'
 
 import Game from './Game';
 import Game3D from './Game3D';
@@ -42,7 +40,13 @@ import {setAttributes as setAttributes3D,setTextInput as setTextInput3D} from '.
 
 import FooterComponent from './components/Footer';
 import MyNfts from './components/MyNfts';
+import { Orbis } from "@orbisclub/orbis-sdk";
 
+import { ChatBox } from '@orbisclub/modules'
+import "@orbisclub/modules/dist/index.modern.css";
+
+/** Initialize the Orbis class object */
+const orbis = new Orbis();
 
 
 const topic = 'hash-avatars/games/first-contact';
@@ -85,6 +89,7 @@ export default function App () {
   const [profile,setProfile] = useState();
   const [connectingIDX,setConnectingIDX] = useState(false);
   const [idx,setIDX] = useState();
+  const [orbisClient,setOrbisClient] = useState();
 
 
   const guests = [
@@ -190,17 +195,13 @@ export default function App () {
       })
     )
   }
-
-  const connectIDX = useCallback(async () => {
+  const connectOrbis = useCallback(async () => {
     if(provider && coinbase){
       try{
         setConnectingIDX(true);
-        const newIDX = await authenticateWithEthereum(provider.provider,coinbase);
-        setIDX(newIDX)
-        let newProfile = await newIDX.get('basicProfile');
-        if(!newProfile){
-          newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
-        }
+        const newOrbisClient = await orbis.connect(provider);
+        setOrbisClient(newOrbisClient)
+        const newProfile = await orbis.getProfile(orbisClient.did);
         console.log(newProfile)
         setProfile(newProfile);
         setConnectingIDX(false);
@@ -210,6 +211,7 @@ export default function App () {
       }
     }
   },[provider,coinbase]);
+
 
   useMemo(() => {
     if(spaceName === "thevibes-space-game-v0"){
@@ -333,7 +335,7 @@ export default function App () {
 
   return (
         <center>
-
+          <ChatBox context="kjzl6cwe1jw14808eb8yfpg3g3olvhi4os1n089xyoji6jekrsit97xtxyo9t0z" poweredByOrbis="black" />
           {
             initialize ?
             <>
@@ -357,12 +359,15 @@ export default function App () {
               <Box align="end" pad="medium" alignContent="center" >
                 {
                   coinbase ?
-                  <Button onClick={() => {
+                  <Button onClick={async () => {
+                    await orbis.logout()
                     logoutOfWeb3Modal();
                     setIDX();
                     setProfile();
                   }} label="Disconnect" /> :
-                  <Button primary onClick={loadWeb3Modal} label="Connect Wallet" />
+                  <Button primary onClick={async () => {
+                    await loadWeb3Modal();
+                  }} label="Connect Wallet" />
                 }
               </Box>
             </Header>
@@ -431,10 +436,10 @@ export default function App () {
                       Connected as {user ? user.sub : profile?.name ? profile.name : coinbase}
                     </Paragraph>
                     {
-                      !user && !idx && !connectingIDX && coinbase &&
+                      !user && !orbisClient && !connectingIDX && coinbase &&
                       <Box pad="xxsmall">
-                        <Button secondary onClick={connectIDX} label="Connect Self.id" size="small"/>
-                        <Paragraph size="small">Use this option to play with your <Anchor href={`https://clay.self.id`} target="_blank" size="xxsmall" label="Self.ID" /></Paragraph>
+                        <Button secondary onClick={connectOrbis} label="Connect Orbis" size="small"/>
+                        <Paragraph size="small">Use this option to play with your <Anchor href={`https://orbis.club/`} target="_blank" size="xxsmall" label="Orbis Profile" /></Paragraph>
                       </Box>
                     }
                     {
@@ -447,18 +452,15 @@ export default function App () {
                     }
                     </Paragraph>
                     {
-                      idx && coinbase && !connectingIDX &&
+                      orbisClient && coinbase && !connectingIDX &&
                       <>
                       <Paragraph>
-                        <small>Edit your profile at <Anchor href={`https://clay.self.id/${idx.id}`} target="_blank" size="small" label="Self.ID" /></small>
+                        <small>Edit your profile at <Anchor href={`https://app.orbis.club/profile/${orbisClient.did}`} target="_blank" size="small" label="Orbis Club" /></small>
                       </Paragraph>
                       <Button onClick={async () => {
                         try{
-                          let newProfile = await idx.get('basicProfile');
-                          if(!newProfile){
-                            newProfile = await getLegacy3BoxProfileAsBasicProfile(coinbase)
-                          }
-                          console.log(newProfile)
+                          const newProfile = await orbis.getProfile(orbisClient.did);
+                          console.log(newProfile);
                           setProfile(newProfile);
                         } catch(err){
                           console.log(err)
@@ -498,12 +500,12 @@ export default function App () {
                           <Button secondary onClick={() => {
                             setMetadata({
                               metadata: {
-                                name: profile.name ? profile.name : coinbase,
-                                description: profile.description,
+                                name: profile.data?.details.profile.name ? profile.data.details.profile.name : profile.did,
+                                description: profile.data.details.profile.description,
                                 image: profile.image ?
                                        profile.image.replace("ipfs://","https://ipfs.io/ipfs/") :
                                        makeBlockie(coinbase),
-                                external_url: profile.url
+                                external_url: profile.data.details.profile.uri
                               },
                               address: coinbase
                             })

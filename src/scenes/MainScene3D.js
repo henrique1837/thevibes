@@ -248,7 +248,7 @@ class MainScene extends Scene3D {
     console.log(this.armies[obj.metadata.name])
   }
   prepareScenario = async () => {
-    const object =  await this.third.load.gltf(`https://infura-ipfs.io/ipfs/${mapHash}/gltf/scene.gltf`);
+    const object =  await this.third.load.gltf(`https://nftstorage.link/ipfs/${mapHash}/gltf/scene.gltf`);
     const scene = object.scenes[0]
 
     const book = new ExtendedObject3D()
@@ -675,8 +675,8 @@ class MainScene extends Scene3D {
     let playerImg;
     if(!this.guestTextures){
       this.guestTextures = await Promise.all([
-        this.third.load.texture("https://infura-ipfs.io/ipfs/QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF"),
-        this.third.load.texture("https://infura-ipfs.io/ipfs/bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy")
+        this.third.load.texture("https://nftstorage.link/ipfs/QmeVRmVLPqUNZUKERq14uXPYbyRoUN7UE8Sha2Q4rT6oyF"),
+        this.third.load.texture("https://nftstorage.link/ipfs/bafybeifkniqdd5nkouwbswhyatrrnx7dv46imnkez4ocxbfsigeijxagsy")
       ])
     }
     if(!metadata.name.includes("Guest")){
